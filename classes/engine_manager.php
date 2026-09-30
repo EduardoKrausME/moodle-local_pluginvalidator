@@ -20,7 +20,7 @@ use curl;
 use coding_exception;
 
 /**
- * Manages the moodle-plugin-ci PHAR used by the validator.
+ * Manages the moodle-plugin-validate engine used by the validator.
  *
  * @package     local_pluginvalidator
  * @copyright   2026 Eduardo Kraus
@@ -28,10 +28,13 @@ use coding_exception;
  */
 class engine_manager {
     /** GitHub latest release endpoint. */
-    private const RELEASE_API = 'https://api.github.com/repos/moodlehq/moodle-plugin-ci/releases/latest';
+    private const RELEASE_API = 'https://api.github.com/repos/EduardoKrausME/moodle-plugin-validate/releases/latest';
 
-    /** Expected asset name. */
-    private const ASSET_NAME = 'moodle-plugin-ci.phar';
+    /** Directory used to store the downloaded validator. */
+    private const ENGINE_DIRECTORY = 'moodle-plugin-validate';
+
+    /** Validator command inside the downloaded project. */
+    private const EXECUTABLE = 'bin/moodle-string-validate';
 
     /**
      * Returns the active engine path.
@@ -46,7 +49,7 @@ class engine_manager {
             return $downloaded;
         }
 
-        $bundled = dirname(__DIR__, 2) . '/tools/' . self::ASSET_NAME;
+        $bundled = dirname(__DIR__, 2) . '/tools/' . self::ENGINE_DIRECTORY . '/' . self::EXECUTABLE;
         if (is_readable($bundled) && filesize($bundled) > 0) {
             return $bundled;
         }
@@ -85,7 +88,10 @@ class engine_manager {
     }
 
     /**
-     * Downloads the latest official moodle-plugin-ci PHAR and verifies its SHA-256 digest.
+     * Downloads and installs the latest moodle-plugin-validate release.
+     *
+     * The project does not publish a PHAR asset. GitHub's release ZIP is downloaded,
+     * extracted and stored in Moodle data so the bundled CLI can be executed directly.
      *
      * @return array Release metadata.
      */
@@ -93,6 +99,7 @@ class engine_manager {
         global $CFG;
 
         require_once($CFG->libdir . '/filelib.php');
+        require_once($CFG->libdir . '/filestorage/file_storage.php');
 
         $curl = new curl();
         $curl->setHeader([
@@ -102,71 +109,100 @@ class engine_manager {
         ]);
         $response = $curl->get(self::RELEASE_API, null, ['CURLOPT_TIMEOUT' => 30]);
         if ($curl->get_errno()) {
-            throw new coding_exception('Unable to query GitHub releases: ' . $curl->error);
+            throw new coding_exception('Unable to query moodle-plugin-validate releases: ' . $curl->error);
         }
 
         $release = json_decode($response, true);
-        if (!is_array($release) || empty($release['tag_name']) || empty($release['assets'])) {
-            throw new coding_exception('Invalid GitHub release response.');
+        if (!is_array($release) || empty($release['tag_name']) || empty($release['zipball_url'])) {
+            throw new coding_exception('Invalid moodle-plugin-validate release response.');
         }
 
-        $asset = null;
-        foreach ($release['assets'] as $candidate) {
-            if (($candidate['name'] ?? '') === self::ASSET_NAME) {
-                $asset = $candidate;
-                break;
-            }
-        }
-        if ($asset === null || empty($asset['browser_download_url'])) {
-            throw new coding_exception('moodle-plugin-ci.phar was not found in the latest release.');
-        }
-
-        $directory = dirname($this->get_downloaded_path());
+        $directory = dirname($this->get_engine_directory());
         if (!is_dir($directory) && !mkdir($directory, $CFG->directorypermissions, true) && !is_dir($directory)) {
             throw new coding_exception('Unable to create validation engine directory.');
         }
 
-        $temporary = $directory . '/.' . self::ASSET_NAME . '.download';
-        @unlink($temporary);
+        $suffix = bin2hex(random_bytes(8));
+        $archive = $directory . '/.' . self::ENGINE_DIRECTORY . '-' . $suffix . '.zip';
+        $extractdirectory = $directory . '/.' . self::ENGINE_DIRECTORY . '-' . $suffix;
+        @unlink($archive);
+        if (is_dir($extractdirectory)) {
+            remove_dir($extractdirectory);
+        }
 
         $download = new curl();
-        $download->setHeader(['User-Agent: Moodle-local_pluginvalidator']);
-        $ok = $download->download_one($asset['browser_download_url'], null, [
-            'filepath' => $temporary,
+        $download->setHeader([
+            'Accept: application/vnd.github+json',
+            'User-Agent: Moodle-local_pluginvalidator',
+            'X-GitHub-Api-Version: 2022-11-28',
+        ]);
+        $ok = $download->download_one($release['zipball_url'], null, [
+            'filepath' => $archive,
             'timeout' => 300,
             'followlocation' => true,
             'maxredirs' => 5,
         ]);
-        if ($ok !== true || !is_readable($temporary)) {
-            @unlink($temporary);
+        if ($ok !== true || !is_readable($archive)) {
+            @unlink($archive);
             $message = is_string($ok) ? $ok : 'Download failed.';
             throw new coding_exception($message);
         }
 
-        $digest = (string)($asset['digest'] ?? '');
-        if (strpos($digest, 'sha256:') === 0) {
-            $expected = substr($digest, 7);
-            $actual = hash_file('sha256', $temporary);
-            if (!hash_equals($expected, $actual)) {
-                @unlink($temporary);
-                throw new coding_exception('SHA-256 validation failed for the downloaded PHAR.');
-            }
+        if (!mkdir($extractdirectory, $CFG->directorypermissions, true) && !is_dir($extractdirectory)) {
+            @unlink($archive);
+            throw new coding_exception('Unable to create temporary validation engine directory.');
         }
 
-        $target = $this->get_downloaded_path();
-        if (!@rename($temporary, $target)) {
-            @unlink($temporary);
+        $packer = get_file_packer('application/zip');
+        $files = $packer->extract_to_pathname($archive, $extractdirectory);
+        if (!$files) {
+            @unlink($archive);
+            remove_dir($extractdirectory);
+            throw new coding_exception('Unable to extract the moodle-plugin-validate release.');
+        }
+
+        $sourceroot = $this->find_extracted_root($extractdirectory);
+        if ($sourceroot === null) {
+            @unlink($archive);
+            remove_dir($extractdirectory);
+            throw new coding_exception('The moodle-plugin-validate executable was not found in the downloaded release.');
+        }
+
+        $target = $this->get_engine_directory();
+        $backup = $directory . '/.' . self::ENGINE_DIRECTORY . '-previous';
+        if (is_dir($backup)) {
+            remove_dir($backup);
+        }
+
+        if (is_dir($target) && !@rename($target, $backup)) {
+            @unlink($archive);
+            remove_dir($extractdirectory);
+            throw new coding_exception('Unable to replace the current validation engine.');
+        }
+
+        if (!@rename($sourceroot, $target)) {
+            if (is_dir($backup)) {
+                @rename($backup, $target);
+            }
+            @unlink($archive);
+            remove_dir($extractdirectory);
             throw new coding_exception('Unable to activate the downloaded validation engine.');
         }
-        @chmod($target, $CFG->filepermissions);
+
+        if (is_dir($backup)) {
+            remove_dir($backup);
+        }
+        if (is_dir($extractdirectory)) {
+            remove_dir($extractdirectory);
+        }
+        @unlink($archive);
 
         set_config('engineversion', $release['tag_name'], 'local_pluginvalidator');
-        set_config('enginedigest', $digest, 'local_pluginvalidator');
         set_config('engineupdated', time(), 'local_pluginvalidator');
+        unset_config('enginedigest', 'local_pluginvalidator');
 
         return [
             'version' => $release['tag_name'],
-            'digest' => $digest,
         ];
     }
 
@@ -241,12 +277,46 @@ class engine_manager {
     }
 
     /**
-     * Returns downloaded engine location in Moodle data.
+     * Finds the validator project root inside an extracted GitHub archive.
+     *
+     * @param string $directory Extracted archive directory.
+     * @return string|null
+     */
+    private function find_extracted_root(string $directory): ?string {
+        if (is_readable($directory . '/' . self::EXECUTABLE) && is_readable($directory . '/autoload.php')) {
+            return $directory;
+        }
+
+        $entries = glob($directory . '/*', GLOB_ONLYDIR);
+        if ($entries === false) {
+            return null;
+        }
+
+        foreach ($entries as $entry) {
+            if (is_readable($entry . '/' . self::EXECUTABLE) && is_readable($entry . '/autoload.php')) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns downloaded engine directory in Moodle data.
+     *
+     * @return string
+     */
+    private function get_engine_directory(): string {
+        global $CFG;
+        return $CFG->dataroot . '/local_pluginvalidator/tools/' . self::ENGINE_DIRECTORY;
+    }
+
+    /**
+     * Returns downloaded validator executable path.
      *
      * @return string
      */
     private function get_downloaded_path(): string {
-        global $CFG;
-        return $CFG->dataroot . '/local_pluginvalidator/tools/' . self::ASSET_NAME;
+        return $this->get_engine_directory() . '/' . self::EXECUTABLE;
     }
 }

@@ -39,7 +39,7 @@ class validator_runner {
     }
 
     /**
-     * Runs moodle-plugin-ci validate against one plugin.
+     * Runs EduardoKrausME/moodle-plugin-validate against one plugin.
      *
      * @param array $plugin Plugin information.
      * @return array
@@ -59,9 +59,7 @@ class validator_runner {
         $php = $this->engine->get_php_binary();
         $command = escapeshellarg($php)
             . ' ' . escapeshellarg($enginepath)
-            . ' validate --no-ansi --no-interaction'
-            . ' --moodle=' . escapeshellarg($CFG->dirroot)
-            . ' -- ' . escapeshellarg($plugin['rootdir']);
+            . ' ' . escapeshellarg($plugin['rootdir']);
 
         $descriptors = [
             0 => ['pipe', 'r'],
@@ -71,7 +69,7 @@ class validator_runner {
 
         $process = proc_open($command, $descriptors, $pipes, $CFG->dirroot);
         if (!is_resource($process)) {
-            throw new coding_exception('Unable to start moodle-plugin-ci.');
+            throw new coding_exception('Unable to start moodle-plugin-validate.');
         }
 
         fclose($pipes[0]);
