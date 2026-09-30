@@ -181,6 +181,21 @@
                                     </div>
                                     <div class="flex-grow-1">
                                         <div>{{message}}</div>
+
+                                        {{#explanation}}
+                                            <div class="mt-2">
+                                                <strong>{{#str}}whythishappened, local_pluginvalidator{{/str}}:</strong>
+                                                <div class="text-muted">{{explanation}}</div>
+                                            </div>
+                                        {{/explanation}}
+
+                                        {{#howToFix}}
+                                            <div class="mt-2">
+                                                <strong>{{#str}}howtofix, local_pluginvalidator{{/str}}:</strong>
+                                                <div class="text-muted">{{howToFix}}</div>
+                                            </div>
+                                        {{/howToFix}}
+
                                         {{#haslocation}}
                                             <div class="small text-muted mt-1">
                                                 <code>{{location}}</code>
