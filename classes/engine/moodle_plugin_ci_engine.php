@@ -645,15 +645,39 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             return;
         }
 
-        $autoload = 'phar://' . $path . '/vendor/autoload.php';
-        if (!is_readable($autoload)) {
-            throw new coding_exception('Unable to find the moodle-plugin-ci Composer autoloader inside the PHAR.');
+        $pharroot = 'phar://' . $path;
+        $composerautoload = $pharroot . '/vendor/autoload.php';
+
+        if (!is_readable($composerautoload)) {
+            throw new coding_exception(
+                'Unable to find the moodle-plugin-ci Composer autoloader inside the PHAR.'
+            );
         }
 
-        require_once($autoload);
+        require_once($composerautoload);
 
-        if (!class_exists(PluginValidate::class) || !class_exists(Runner::class)) {
-            throw new coding_exception('Unable to load moodle-plugin-ci validation classes from the PHAR.');
+        if (!class_exists(PluginValidate::class)) {
+            throw new coding_exception(
+                'Unable to load ' . PluginValidate::class . ' from the moodle-plugin-ci PHAR.'
+            );
+        }
+
+        if (!class_exists(Runner::class)) {
+            $phpcsautoload = $pharroot . '/vendor/squizlabs/php_codesniffer/autoload.php';
+
+            if (!is_readable($phpcsautoload)) {
+                throw new coding_exception(
+                    'Unable to find the PHP_CodeSniffer autoloader inside the moodle-plugin-ci PHAR.'
+                );
+            }
+
+            require_once($phpcsautoload);
+        }
+
+        if (!class_exists(Runner::class)) {
+            throw new coding_exception(
+                'Unable to load ' . Runner::class . ' from the PHP_CodeSniffer bundled in moodle-plugin-ci.'
+            );
         }
     }
 
