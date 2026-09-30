@@ -22,6 +22,7 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use local_pluginvalidator\engine\validation_engine_interface;
 use local_pluginvalidator\engine_manager;
 use local_pluginvalidator\plugin_repository;
 use local_pluginvalidator\validator_runner;
@@ -34,6 +35,7 @@ require_capability('moodle/site:config', $context);
 
 $component = required_param('component', PARAM_COMPONENT);
 $action = optional_param('action', '', PARAM_ALPHA);
+$engineid = optional_param('engine', '', PARAM_ALPHANUMEXT);
 
 $repository = new plugin_repository();
 $plugin = $repository->get_extension($component);
@@ -41,7 +43,10 @@ if ($plugin === null) {
     throw new moodle_exception('invalidplugin', 'local_pluginvalidator');
 }
 
-$engine = new engine_manager();
+$enginemanager = new engine_manager();
+$engines = $enginemanager->get_engines();
+$selectedengine = $engineid !== '' ? $enginemanager->get_engine($engineid) : null;
+
 $result = null;
 $notice = null;
 $noticeclass = null;
@@ -49,9 +54,13 @@ $noticeclass = null;
 if ($action !== '') {
     require_sesskey();
 
+    if ($selectedengine === null) {
+        throw new moodle_exception('invalidengine', 'local_pluginvalidator');
+    }
+
     if ($action === 'installengine') {
         try {
-            $release = $engine->install_latest();
+            $release = $selectedengine->install_latest();
             $notice = get_string('engineinstalled', 'local_pluginvalidator', $release['version']);
             $noticeclass = 'success';
         } catch (Throwable $e) {
@@ -60,14 +69,17 @@ if ($action !== '') {
         }
     } else if ($action === 'validate') {
         try {
-            $runner = new validator_runner($engine);
+            $runner = new validator_runner($selectedengine);
             $result = $runner->validate($plugin);
         } catch (Throwable $e) {
             $result = [
                 'schema' => 1,
+                'engine' => $selectedengine->get_id(),
+                'format' => $selectedengine->get_result_format(),
                 'component' => $plugin['component'],
                 'success' => false,
                 'status' => 'error',
+                'output' => '',
                 'summary' => [
                     'total' => 0,
                     'ok' => 0,
@@ -83,7 +95,19 @@ if ($action !== '') {
     }
 }
 
-$enginestatus = $engine->get_status();
+$enginecards = [];
+foreach ($engines as $engine) {
+    $status = $engine->get_status();
+    $enginecards[] = [
+        'id' => $engine->get_id(),
+        'name' => $engine->get_name(),
+        'description' => $engine->get_description(),
+        'format' => $engine->get_result_format(),
+        'available' => $status['available'],
+        'version' => $status['version'],
+        'source' => $status['source'],
+    ];
+}
 
 $resultsummary = [
     'total' => 0,
@@ -94,49 +118,66 @@ $resultsummary = [
 $resultgroups = [];
 $resultruntimeerror = false;
 $resulterrormessage = '';
+$resultformat = '';
+$resultstructured = false;
+$resulttext = false;
+$resultoutput = '';
+$resultenginename = '';
 
 if ($result !== null) {
-    $resultsummary = array_merge($resultsummary, $result['summary'] ?? []);
+    $resultformat = (string)($result['format'] ?? validation_engine_interface::RESULT_STRUCTURED);
+    $resultstructured = $resultformat === validation_engine_interface::RESULT_STRUCTURED;
+    $resulttext = $resultformat === validation_engine_interface::RESULT_TEXT;
+    $resultoutput = (string)($result['output'] ?? '');
     $resultruntimeerror = !empty($result['runtimeError']);
     $resulterrormessage = (string)($result['runtimeError']['message'] ?? '');
 
-    $statusclasses = [
-        'ok' => 'success',
-        'warning' => 'warning',
-        'error' => 'danger',
-    ];
-    $statuslabels = [
-        'ok' => get_string('statusok', 'local_pluginvalidator'),
-        'warning' => get_string('statuswarning', 'local_pluginvalidator'),
-        'error' => get_string('statuserror', 'local_pluginvalidator'),
-    ];
+    $resultengineid = (string)($result['engine'] ?? '');
+    if ($resultengineid !== '' && isset($engines[$resultengineid])) {
+        $resultenginename = $engines[$resultengineid]->get_name();
+    }
 
-    foreach ($result['groups'] ?? [] as $group) {
-        $status = $group['status'] ?? 'ok';
-        $group['statusclass'] = $statusclasses[$status] ?? 'secondary';
-        $group['statuslabel'] = $statuslabels[$status] ?? $status;
-        $viewchecks = [];
+    if ($resultstructured) {
+        $resultsummary = array_merge($resultsummary, $result['summary'] ?? []);
 
-        foreach ($group['checks'] ?? [] as $check) {
-            $checkstatus = $check['status'] ?? 'ok';
-            $check['statusclass'] = $statusclasses[$checkstatus] ?? 'secondary';
-            $check['statuslabel'] = $statuslabels[$checkstatus] ?? $checkstatus;
+        $statusclasses = [
+            'ok' => 'success',
+            'warning' => 'warning',
+            'error' => 'danger',
+        ];
+        $statuslabels = [
+            'ok' => get_string('statusok', 'local_pluginvalidator'),
+            'warning' => get_string('statuswarning', 'local_pluginvalidator'),
+            'error' => get_string('statuserror', 'local_pluginvalidator'),
+        ];
 
-            $file = (string)($check['file'] ?? '');
-            $line = (int)($check['line'] ?? 0);
-            $check['haslocation'] = $file !== '' && $file !== '.';
-            $check['location'] = $check['haslocation']
-                ? $file . ($line > 0 ? ':' . $line : '')
-                : '';
+        foreach ($result['groups'] ?? [] as $group) {
+            $status = $group['status'] ?? 'ok';
+            $group['statusclass'] = $statusclasses[$status] ?? 'secondary';
+            $group['statuslabel'] = $statuslabels[$status] ?? $status;
+            $viewchecks = [];
 
-            $target = (string)($check['target'] ?? '');
-            $check['hastarget'] = $target !== '' && $target !== $file;
+            foreach ($group['checks'] ?? [] as $check) {
+                $checkstatus = $check['status'] ?? 'ok';
+                $check['statusclass'] = $statusclasses[$checkstatus] ?? 'secondary';
+                $check['statuslabel'] = $statuslabels[$checkstatus] ?? $checkstatus;
 
-            $viewchecks[] = $check;
+                $file = (string)($check['file'] ?? '');
+                $line = (int)($check['line'] ?? 0);
+                $check['haslocation'] = $file !== '' && $file !== '.';
+                $check['location'] = $check['haslocation']
+                    ? $file . ($line > 0 ? ':' . $line : '')
+                    : '';
+
+                $target = (string)($check['target'] ?? '');
+                $check['hastarget'] = $target !== '' && $target !== $file;
+
+                $viewchecks[] = $check;
+            }
+
+            $group['checks'] = $viewchecks;
+            $resultgroups[] = $group;
         }
-
-        $group['checks'] = $viewchecks;
-        $resultgroups[] = $group;
     }
 }
 
@@ -154,16 +195,18 @@ $templatedata = [
     'versiondisk' => $plugin['versiondisk'],
     'rootdir' => $plugin['rootdir'],
     'backurl' => new moodle_url('/local/pluginvalidator/plugins.php', ['type' => $plugin['type']]),
-    'engineavailable' => $enginestatus['available'],
-    'engineversion' => $enginestatus['version'],
-    'enginesource' => $enginestatus['source'],
     'actionurl' => new moodle_url('/local/pluginvalidator/plugin.php'),
     'sesskey' => sesskey(),
+    'engines' => $enginecards,
     'hasnotice' => $notice !== null,
     'notice' => $notice,
     'noticeclass' => $noticeclass,
     'hasresult' => $result !== null,
+    'resultenginename' => $resultenginename,
     'resultsuccess' => $result['success'] ?? false,
+    'resultstructured' => $resultstructured,
+    'resulttext' => $resulttext,
+    'resultoutput' => $resultoutput,
     'resultok' => $resultsummary['ok'],
     'resultwarnings' => $resultsummary['warnings'],
     'resulterrors' => $resultsummary['errors'],
