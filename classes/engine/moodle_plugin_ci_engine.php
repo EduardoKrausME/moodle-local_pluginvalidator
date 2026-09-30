@@ -495,8 +495,11 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             ];
         }
 
-        $moodlestandard = 'phar://' . $enginepath . '/vendor/moodlehq/moodle-cs/moodle';
-        if (!is_readable($moodlestandard . '/ruleset.xml')) {
+        $pharroot = 'phar://' . $enginepath . '/vendor';
+        $moodlecs = $pharroot . '/moodlehq/moodle-cs';
+        $phpcsextra = $pharroot . '/phpcsstandards/phpcsextra';
+
+        if (!is_readable($moodlecs . '/moodle/ruleset.xml')) {
             return [
                 'command' => $this->phpcs_command_label(),
                 'success' => false,
@@ -504,11 +507,26 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             ];
         }
 
+        if (!is_readable($phpcsextra . '/Universal/ruleset.xml')
+            || !is_readable($phpcsextra . '/NormalizedArrays/ruleset.xml')
+        ) {
+            return [
+                'command' => $this->phpcs_command_label(),
+                'success' => false,
+                'output' => 'ERROR: PHPCSExtra standards required by moodle-cs were not found inside the moodle-plugin-ci PHAR.',
+            ];
+        }
+
+        $installedpaths = implode(',', [
+            $moodlecs,
+            $phpcsextra,
+        ]);
+
         $arguments = [
             'phpcs',
             '--runtime-set',
             'installed_paths',
-            $moodlestandard,
+            $installedpaths,
             '--standard=moodle',
             '--extensions=php',
             '-p',
