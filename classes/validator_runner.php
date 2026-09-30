@@ -50,12 +50,11 @@ class validator_runner {
      * @throws coding_exception
      */
     public function validate(array $plugin): array {
-        $enginepath = $this->engine->get_engine_path();
-        if ($enginepath === null) {
+        $engineroot = $this->engine->get_engine_root();
+        if ($engineroot === null) {
             throw new coding_exception(get_string('enginenotinstalled', 'local_pluginvalidator'));
         }
 
-        $engineroot = dirname($enginepath, 2);
         $autoload = $engineroot . '/autoload.php';
         if (!is_readable($autoload)) {
             throw new coding_exception('Unable to load the moodle-plugin-validate autoloader.');
