@@ -30,6 +30,8 @@ require_login();
 $context = context_system::instance();
 require_capability('moodle/site:config', $context);
 
+$query = optional_param('q', '', PARAM_TEXT);
+
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/pluginvalidator/index.php'));
 $PAGE->set_pagelayout('admin');
@@ -38,9 +40,22 @@ $PAGE->set_heading(get_string('pluginname', 'local_pluginvalidator'));
 
 $repository = new plugin_repository();
 $types = $repository->get_types_with_extensions();
+$plugins = $query !== '' ? $repository->search_extensions($query) : [];
+
+$plugins = array_map(static function(array $plugin): array {
+    $plugin['url'] = new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $plugin['component']]);
+    $plugin['typeurl'] = new moodle_url('/local/pluginvalidator/plugins.php', ['type' => $plugin['type']]);
+    return $plugin;
+}, $plugins);
 
 $templatedata = [
     'intro' => get_string('welcome_desc', 'local_pluginvalidator'),
+    'searchurl' => new moodle_url('/local/pluginvalidator/index.php'),
+    'query' => $query,
+    'hasquery' => $query !== '',
+    'hasresults' => !empty($plugins),
+    'resulttitle' => get_string('searchresultsfor', 'local_pluginvalidator', $query),
+    'plugins' => $plugins,
     'hastypes' => !empty($types),
     'types' => array_values(array_map(static function(array $type): array {
         $type['url'] = new moodle_url('/local/pluginvalidator/plugins.php', ['type' => $type['type']]);
