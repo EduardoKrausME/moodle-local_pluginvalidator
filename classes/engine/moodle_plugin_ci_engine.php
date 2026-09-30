@@ -114,7 +114,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
         }
 
         $target = $this->get_downloaded_path();
-        $temporary = $directory . '/.' . self::ASSET_NAME . '-' . bin2hex(random_bytes(8));
+        $temporary = $directory . '/.moodle-plugin-ci-' . bin2hex(random_bytes(8)) . '.phar';
 
         $download = new curl();
         $download->setHeader([
@@ -315,7 +315,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
      * @return string
      */
     private function strip_console_markup(string $message): string {
-        $clean = preg_replace('/<\/?(?:info|comment|error|question|fg=[^>]+|bg=[^>]+|)>/', '', $message);
+        $clean = preg_replace('/<[^>]+>/', '', $message);
         return trim($clean ?? $message);
     }
 
