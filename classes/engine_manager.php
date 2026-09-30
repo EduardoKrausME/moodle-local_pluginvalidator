@@ -173,24 +173,71 @@ class engine_manager {
     /**
      * Returns PHP CLI binary path.
      *
+     * Moodle installations served by PHP-FPM commonly expose PHP_BINARY as
+     * php-fpm, even when the CLI binary is installed. Try Moodle's explicit
+     * setting first, then PHP's bindir and the process PATH.
+     *
      * @return string
      */
     public function get_php_binary(): string {
         global $CFG;
 
-        if (!empty($CFG->pathtophp) && is_executable($CFG->pathtophp)) {
+        if (!empty($CFG->pathtophp) && $this->is_executable_file($CFG->pathtophp)) {
             return $CFG->pathtophp;
         }
 
-        if (PHP_SAPI === 'cli' && is_executable(PHP_BINARY)) {
+        if (PHP_SAPI === 'cli' && $this->is_executable_file(PHP_BINARY)) {
             return PHP_BINARY;
         }
 
-        if (is_executable(PHP_BINARY) && stripos(basename(PHP_BINARY), 'fpm') === false) {
-            return PHP_BINARY;
+        $executablename = PHP_OS_FAMILY === 'Windows' ? 'php.exe' : 'php';
+        $versionednames = PHP_OS_FAMILY === 'Windows'
+            ? ['php.exe']
+            : [
+                'php',
+                'php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION,
+                'php' . PHP_MAJOR_VERSION . PHP_MINOR_VERSION,
+            ];
+
+        $candidates = [];
+        if (defined('PHP_BINDIR') && PHP_BINDIR !== '') {
+            foreach ($versionednames as $name) {
+                $candidates[] = PHP_BINDIR . DIRECTORY_SEPARATOR . $name;
+            }
+        }
+
+        $path = getenv('PATH');
+        if (is_string($path) && $path !== '') {
+            foreach (explode(PATH_SEPARATOR, $path) as $directory) {
+                $directory = trim($directory);
+                if ($directory !== '') {
+                    $candidates[] = rtrim($directory, '/\\') . DIRECTORY_SEPARATOR . $executablename;
+                }
+            }
+        }
+
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $candidates[] = '/usr/bin/php';
+            $candidates[] = '/usr/local/bin/php';
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            if ($this->is_executable_file($candidate)) {
+                return $candidate;
+            }
         }
 
         throw new coding_exception(get_string('phpclinotconfigured', 'local_pluginvalidator'));
+    }
+
+    /**
+     * Checks whether a path points to an executable file.
+     *
+     * @param string $path Candidate executable path.
+     * @return bool
+     */
+    private function is_executable_file(string $path): bool {
+        return is_file($path) && is_executable($path);
     }
 
     /**
