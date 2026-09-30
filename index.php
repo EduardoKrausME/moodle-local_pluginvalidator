@@ -44,7 +44,6 @@ $plugins = $query !== '' ? $repository->search_extensions($query) : [];
 
 $plugins = array_map(static function(array $plugin): array {
     $plugin['url'] = new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $plugin['component']]);
-    $plugin['typeurl'] = new moodle_url('/local/pluginvalidator/plugins.php', ['type' => $plugin['type']]);
     return $plugin;
 }, $plugins);
 
