@@ -16,179 +16,35 @@
 
 namespace local_pluginvalidator;
 
-use coding_exception;
-use EduardoKraus\MoodleStringValidate\Validator;
+use local_pluginvalidator\engine\validation_engine_interface;
 
 /**
- * Runs validation against an installed plugin.
+ * Executes one validation engine against an installed plugin.
  *
  * @package     local_pluginvalidator
  * @copyright   2026 Eduardo Kraus
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class validator_runner {
-    /** @var engine_manager */
+    /** @var validation_engine_interface */
     private $engine;
 
     /**
      * Constructor.
      *
-     * @param engine_manager $engine Engine manager.
+     * @param validation_engine_interface $engine Validation engine.
      */
-    public function __construct(engine_manager $engine) {
+    public function __construct(validation_engine_interface $engine) {
         $this->engine = $engine;
     }
 
     /**
-     * Runs EduardoKrausME/moodle-plugin-validate and returns structured data.
-     *
-     * No CLI process is involved. New validator versions expose validateResult()
-     * directly; the fallback keeps compatibility with older installed engines.
+     * Runs the selected engine.
      *
      * @param array $plugin Plugin information.
      * @return array
-     * @throws coding_exception
      */
     public function validate(array $plugin): array {
-        $engineroot = $this->engine->get_engine_root();
-        if ($engineroot === null) {
-            throw new coding_exception(get_string('enginenotinstalled', 'local_pluginvalidator'));
-        }
-
-        $autoload = $engineroot . '/autoload.php';
-        if (!is_readable($autoload)) {
-            throw new coding_exception('Unable to load the moodle-plugin-validate autoloader.');
-        }
-
-        require_once($autoload);
-
-        try {
-            $validator = new Validator();
-
-            if (method_exists($validator, 'validateResult')) {
-                $validationresult = $validator->validateResult($plugin['rootdir']);
-                $result = $validationresult->toArray();
-            } else {
-                $checks = $validator->validateDetailed($plugin['rootdir']);
-                $result = $this->normalise_legacy_checks($plugin['component'], $checks);
-            }
-
-            return $result;
-        } catch (\Throwable $e) {
-            return [
-                'schema' => 1,
-                'component' => $plugin['component'],
-                'success' => false,
-                'status' => 'error',
-                'summary' => [
-                    'total' => 0,
-                    'ok' => 0,
-                    'warnings' => 0,
-                    'errors' => 1,
-                ],
-                'groups' => [],
-                'runtimeError' => [
-                    'message' => $e->getMessage(),
-                ],
-            ];
-        }
-    }
-
-    /**
-     * Converts old Check[] responses to the structured schema used by current engines.
-     *
-     * @param string $component Plugin component.
-     * @param array $checks Validator checks.
-     * @return array
-     */
-    private function normalise_legacy_checks(string $component, array $checks): array {
-        $summary = [
-            'total' => 0,
-            'ok' => 0,
-            'warnings' => 0,
-            'errors' => 0,
-        ];
-        $groups = [];
-
-        foreach ($checks as $check) {
-            $rule = $check->rule;
-            if ($rule === '' && str_starts_with($check->key, 'xmldb:')) {
-                $rule = 'installxml';
-            } else if ($rule === '') {
-                $rule = 'general';
-            }
-
-            if ($check->isError()) {
-                $status = 'error';
-            } else if ($check->isWarning()) {
-                $status = 'warning';
-            } else {
-                $status = 'ok';
-            }
-
-            if (!isset($groups[$rule])) {
-                $groups[$rule] = [
-                    'rule' => $rule,
-                    'status' => 'ok',
-                    'summary' => [
-                        'total' => 0,
-                        'ok' => 0,
-                        'warnings' => 0,
-                        'errors' => 0,
-                    ],
-                    'checks' => [],
-                ];
-            }
-
-            $summary['total']++;
-            $groups[$rule]['summary']['total']++;
-
-            if ($status === 'error') {
-                $summary['errors']++;
-                $groups[$rule]['summary']['errors']++;
-            } else if ($status === 'warning') {
-                $summary['warnings']++;
-                $groups[$rule]['summary']['warnings']++;
-            } else {
-                $summary['ok']++;
-                $groups[$rule]['summary']['ok']++;
-            }
-
-            $groups[$rule]['checks'][] = [
-                'status' => $status,
-                'rule' => $rule,
-                'file' => $check->file,
-                'line' => $check->line,
-                'key' => $check->key,
-                'target' => $check->target(),
-                'message' => $check->message,
-                'languageString' => $check->languageString,
-            ];
-        }
-
-        foreach ($groups as &$group) {
-            if ($group['summary']['errors'] > 0) {
-                $group['status'] = 'error';
-            } else if ($group['summary']['warnings'] > 0) {
-                $group['status'] = 'warning';
-            }
-        }
-        unset($group);
-
-        $status = 'ok';
-        if ($summary['errors'] > 0) {
-            $status = 'error';
-        } else if ($summary['warnings'] > 0) {
-            $status = 'warning';
-        }
-
-        return [
-            'schema' => 1,
-            'component' => $component,
-            'success' => $summary['errors'] === 0,
-            'status' => $status,
-            'summary' => $summary,
-            'groups' => array_values($groups),
-        ];
+        return $this->engine->validate($plugin);
     }
 }
