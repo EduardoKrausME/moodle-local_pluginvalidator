@@ -1,0 +1,107 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_pluginvalidator/plugin
+
+    Example context (json):
+    {
+    }
+}}
+<div class="local-pluginvalidator">
+    <div class="mb-3">
+        <a href="{{backurl}}">&larr; {{#str}}back, local_pluginvalidator{{/str}}</a>
+    </div>
+
+    {{#hasnotice}}
+        <div class="alert alert-{{noticeclass}}">{{notice}}</div>
+    {{/hasnotice}}
+
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">{{displayname}}</h2>
+            <div><code>{{component}}</code></div>
+        </div>
+        <div class="text-lg-end text-muted small">
+            {{#release}}<div>{{#str}}release, local_pluginvalidator{{/str}}: {{release}}</div>{{/release}}
+            {{#versiondisk}}<div>{{#str}}version, local_pluginvalidator{{/str}}: {{versiondisk}}</div>{{/versiondisk}}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h3 class="h5 mb-1">{{#str}}engine, local_pluginvalidator{{/str}}</h3>
+                    {{#engineavailable}}
+                        <div class="text-success">{{#str}}engineavailable, local_pluginvalidator{{/str}}</div>
+                        <div class="small text-muted">{{engineversion}} {{enginesource}}</div>
+                    {{/engineavailable}}
+                    {{^engineavailable}}
+                        <div class="text-warning">{{#str}}enginemissing, local_pluginvalidator{{/str}}</div>
+                    {{/engineavailable}}
+                </div>
+                <form method="post" action="{{actionurl}}" class="mb-0">
+                    <input type="hidden" name="component" value="{{component}}">
+                    <input type="hidden" name="action" value="installengine">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        {{#engineavailable}}{{#str}}updateengine, local_pluginvalidator{{/str}}{{/engineavailable}}
+                        {{^engineavailable}}{{#str}}installengine, local_pluginvalidator{{/str}}{{/engineavailable}}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="h4 mb-3">{{#str}}validations, local_pluginvalidator{{/str}}</h3>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h4 class="h5 mb-1">Moodle Plugin Validator</h4>
+                    <p class="text-muted mb-0">{{#str}}validator_desc, local_pluginvalidator{{/str}}</p>
+                </div>
+                {{#engineavailable}}
+                    <form method="post" action="{{actionurl}}" class="mb-0">
+                        <input type="hidden" name="component" value="{{component}}">
+                        <input type="hidden" name="action" value="validate">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <button type="submit" class="btn btn-primary">{{#str}}runvalidation, local_pluginvalidator{{/str}}</button>
+                    </form>
+                {{/engineavailable}}
+                {{^engineavailable}}
+                    <button class="btn btn-primary" disabled>{{#str}}runvalidation, local_pluginvalidator{{/str}}</button>
+                {{/engineavailable}}
+            </div>
+        </div>
+    </div>
+
+    {{#hasresult}}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>{{#str}}result, local_pluginvalidator{{/str}}</strong>
+                {{#resultsuccess}}<span class="badge bg-success">{{#str}}passed, local_pluginvalidator{{/str}}</span>{{/resultsuccess}}
+                {{^resultsuccess}}<span class="badge bg-danger">{{#str}}failed, local_pluginvalidator{{/str}}</span>{{/resultsuccess}}
+            </div>
+            <div class="card-body">
+                <div class="small text-muted mb-2">Exit code: {{resultexitcode}}</div>
+                <pre class="bg-light border rounded p-3 mb-0 overflow-auto"><code>{{resultoutput}}</code></pre>
+            </div>
+        </div>
+    {{/hasresult}}
+</div>

@@ -1,0 +1,47 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_pluginvalidator/plugins
+
+    Example context (json):
+    {
+    }
+}}
+<div class="local-pluginvalidator">
+    <div class="mb-3">
+        <a href="{{backurl}}">&larr; {{#str}}back, local_pluginvalidator{{/str}}</a>
+    </div>
+
+    <div class="mb-4">
+        <h2>{{typename}}</h2>
+        <p class="text-muted mb-0">{{#str}}thirdpartyonly, local_pluginvalidator{{/str}}</p>
+    </div>
+
+    <div class="list-group">
+        {{#plugins}}
+            <a href="{{url}}" class="list-group-item list-group-item-action py-3">
+                <div class="d-flex w-100 justify-content-between align-items-start gap-3">
+                    <div>
+                        <h3 class="h5 mb-1">{{displayname}}</h3>
+                        <code>{{component}}</code>
+                    </div>
+                    {{#release}}<span class="text-muted small">{{release}}</span>{{/release}}
+                </div>
+            </a>
+        {{/plugins}}
+    </div>
+</div>
