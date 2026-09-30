@@ -287,18 +287,27 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
                 continue;
             }
 
-            // Keep the same safety check used by moodle-local_ci for modern upgrade functions.
-            $returncount = preg_match_all('@' . $returnregexp . '@is', $contents, $matches);
-            if (!$returncount) {
-                $output[] = "    + ERROR: 'return true;' not found";
-                $success = false;
-                continue;
+            $versionfile = dirname(dirname($file)) . '/version.php';
+            $moodle23andup = false;
+            if (is_file($versionfile)) {
+                $versioncontents = file_get_contents($versionfile);
+                $moodle23andup = $versioncontents !== false
+                    && preg_match('/^\\s*\\$branch\\s*=/m', $versioncontents) === 1;
             }
 
-            if ($returncount !== 1) {
-                $output[] = "    + ERROR: multiple 'return true;' detected";
-                $success = false;
-                continue;
+            if ($moodle23andup) {
+                $returncount = preg_match_all('@' . $returnregexp . '@is', $contents, $matches);
+                if (!$returncount) {
+                    $output[] = "    + ERROR: 'return true;' not found";
+                    $success = false;
+                    continue;
+                }
+
+                if ($returncount !== 1) {
+                    $output[] = "    + ERROR: multiple 'return true;' detected";
+                    $success = false;
+                    continue;
+                }
             }
 
             $sanitised = $this->replace_unsafe_string_literals($contents);
@@ -395,7 +404,6 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
                 $output[] = '    + versions in savepoint calls properly matching upgrade blocks';
             }
 
-            $versionfile = dirname(dirname($file)) . '/version.php';
             if (is_file($versionfile)) {
                 $versioncontents = file_get_contents($versionfile);
                 if ($versioncontents !== false
@@ -591,7 +599,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
      * @return string
      */
     private function replace_unsafe_string_literals(string $contents): string {
-        $regexp = '(["\\'])(?:\\\\\\1|.)*?\\1';
+        $regexp = '(["\'])(?:\\\\\\1|.)*?\\1';
         $discarded = [];
 
         preg_match_all('@' . $regexp . '@', $contents, $matches);
