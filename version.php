@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026093005;
-$plugin->release = '0.3.4';
+$plugin->version = 2026093006;
+$plugin->release = '0.3.5';
 $plugin->component = 'local_pluginvalidator';
 $plugin->requires = 2022112800;
 $plugin->maturity = MATURITY_ALPHA;
