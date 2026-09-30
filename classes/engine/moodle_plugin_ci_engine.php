@@ -244,14 +244,25 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
      * @return array{command: string, success: bool, output: string}
      */
     private function run_savepoints(array $plugin): array {
-        $files = $this->find_upgrade_files($plugin['rootdir']);
-        if ($files === []) {
+        $rootupgrade = rtrim($plugin['rootdir'], DIRECTORY_SEPARATOR)
+            . DIRECTORY_SEPARATOR . 'db' . DIRECTORY_SEPARATOR . 'upgrade.php';
+
+        // Keep the same gate used by moodle-plugin-ci SavePointsCommand.
+        if (!is_file($rootupgrade)) {
             return [
                 'command' => 'moodle-plugin-ci savepoints',
                 'success' => true,
                 'output' => 'No relevant files found to process, free pass!',
             ];
         }
+
+        $files = $this->find_upgrade_files($plugin['rootdir']);
+
+        // The root upgrade.php is mandatory here. Seed it explicitly so symlinked
+        // plugin roots or filesystem iterator differences cannot hide it.
+        $files[$rootupgrade] = $rootupgrade;
+        $files = array_values($files);
+        sort($files);
 
         $success = true;
         $output = [];
@@ -577,18 +588,13 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             }
 
             $path = str_replace('\\', '/', $item->getPathname());
-            if (!str_ends_with($path, '/db/upgrade.php')) {
+            if (!str_ends_with($path, '/db/upgrade.php') || str_contains($path, '/.git/')) {
                 continue;
             }
 
-            if (str_contains($path, '/.git/')) {
-                continue;
-            }
-
-            $files[] = $item->getPathname();
+            $files[$item->getPathname()] = $item->getPathname();
         }
 
-        sort($files);
         return $files;
     }
 
