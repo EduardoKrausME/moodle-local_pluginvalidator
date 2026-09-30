@@ -17,6 +17,7 @@
 namespace local_pluginvalidator\engine;
 
 use coding_exception;
+use core_component;
 use curl;
 use MoodlePluginCI\Bridge\MoodlePlugin;
 use MoodlePluginCI\PluginValidate\Plugin;
@@ -191,6 +192,8 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
         try {
             $this->load_library($enginepath);
 
+            $plugin['rootdir'] = $this->resolve_plugin_root($plugin);
+
             $steps = [
                 $this->run_savepoints($plugin),
                 $this->run_validate($plugin),
@@ -252,7 +255,8 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             return [
                 'command' => 'moodle-plugin-ci savepoints',
                 'success' => true,
-                'output' => 'No relevant files found to process, free pass!',
+                'output' => 'No relevant files found to process, free pass!'
+                    . "\nChecked: " . $rootupgrade,
             ];
         }
 
@@ -670,6 +674,41 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
         }
 
         return $path;
+    }
+
+    /**
+     * Resolves the installed plugin directory from Moodle and the repository data.
+     *
+     * @param array $plugin Plugin information.
+     * @return string
+     */
+    private function resolve_plugin_root(array $plugin): string {
+        $candidates = [];
+
+        if (!empty($plugin['rootdir'])) {
+            $candidates[] = (string)$plugin['rootdir'];
+        }
+
+        $componentdir = core_component::get_component_directory($plugin['component']);
+        if (is_string($componentdir) && $componentdir !== '') {
+            $candidates[] = $componentdir;
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            $realpath = realpath($candidate);
+            if ($realpath !== false && is_dir($realpath)) {
+                return $realpath;
+            }
+
+            if (is_dir($candidate)) {
+                return $candidate;
+            }
+        }
+
+        throw new coding_exception(
+            'Unable to resolve the installed directory for ' . $plugin['component']
+            . '. Candidates: ' . implode(', ', $candidates)
+        );
     }
 
     /**
