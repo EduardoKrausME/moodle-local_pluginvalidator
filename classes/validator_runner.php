@@ -74,7 +74,6 @@ class validator_runner {
                 $result = $this->normalise_legacy_checks($plugin['component'], $checks);
             }
 
-            $result['exitcode'] = $result['success'] ? 0 : 1;
             return $result;
         } catch (\Throwable $e) {
             return [
@@ -89,9 +88,9 @@ class validator_runner {
                     'errors' => 1,
                 ],
                 'groups' => [],
-                'runtimeerror' => true,
-                'errormessage' => $e->getMessage(),
-                'exitcode' => 2,
+                'runtimeError' => [
+                    'message' => $e->getMessage(),
+                ],
             ];
         }
     }
