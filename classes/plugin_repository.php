@@ -19,6 +19,7 @@ namespace local_pluginvalidator;
 use core\plugininfo\base;
 use core_component;
 use core_plugin_manager;
+use core_text;
 
 /**
  * Finds installed third-party plugins.
@@ -81,6 +82,71 @@ class plugin_repository {
 
         uasort($result, static function(array $a, array $b): int {
             return strcasecmp($a['displayname'], $b['displayname']);
+        });
+
+        return $result;
+    }
+
+    /**
+     * Searches all installed extension plugins.
+     *
+     * Standard plugins shipped with Moodle are intentionally excluded. The query
+     * is matched against the display name, short name, component and plugin type.
+     *
+     * @param string $query Search term.
+     * @return array
+     */
+    public function search_extensions(string $query): array {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+
+        $needle = core_text::strtolower($query);
+        $result = [];
+        $pluginmanager = core_plugin_manager::instance();
+
+        foreach (core_component::get_plugin_types() as $type => $path) {
+            $typename = $pluginmanager->plugintype_name_plural($type);
+            $plugins = $pluginmanager->get_plugins_of_type($type);
+
+            foreach ($plugins as $plugininfo) {
+                if ($plugininfo->is_standard() || empty($plugininfo->rootdir)) {
+                    continue;
+                }
+
+                $plugin = $this->normalise_plugin($plugininfo);
+                $haystacks = [
+                    $plugin['displayname'],
+                    $plugin['name'],
+                    $plugin['component'],
+                    $plugin['type'],
+                    $typename,
+                ];
+
+                $matches = false;
+                foreach ($haystacks as $haystack) {
+                    if (core_text::strpos(core_text::strtolower((string)$haystack), $needle) !== false) {
+                        $matches = true;
+                        break;
+                    }
+                }
+
+                if (!$matches) {
+                    continue;
+                }
+
+                $plugin['typename'] = $typename;
+                $result[] = $plugin;
+            }
+        }
+
+        usort($result, static function(array $a, array $b): int {
+            $comparison = strcasecmp($a['displayname'], $b['displayname']);
+            if ($comparison !== 0) {
+                return $comparison;
+            }
+            return strcasecmp($a['component'], $b['component']);
         });
 
         return $result;
