@@ -194,7 +194,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             $steps = [
                 $this->run_savepoints($plugin),
                 $this->run_validate($plugin),
-                $this->run_phpcs($plugin),
+                $this->run_phpcs($plugin, $enginepath),
             ];
 
             $success = true;
@@ -479,9 +479,10 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
      * Executes Moodle PHPCS directly in the current PHP process.
      *
      * @param array $plugin Plugin information.
+     * @param string $enginepath moodle-plugin-ci PHAR path.
      * @return array{command: string, success: bool, output: string}
      */
-    private function run_phpcs(array $plugin): array {
+    private function run_phpcs(array $plugin, string $enginepath): array {
         $ciplugin = new MoodlePlugin($plugin['rootdir']);
         $ciplugin->context = 'phpcs';
 
@@ -494,8 +495,20 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             ];
         }
 
+        $moodlestandard = 'phar://' . $enginepath . '/vendor/moodlehq/moodle-cs/moodle';
+        if (!is_readable($moodlestandard . '/ruleset.xml')) {
+            return [
+                'command' => $this->phpcs_command_label(),
+                'success' => false,
+                'output' => 'ERROR: Moodle coding standard was not found inside the moodle-plugin-ci PHAR.',
+            ];
+        }
+
         $arguments = [
             'phpcs',
+            '--runtime-set',
+            'installed_paths',
+            $moodlestandard,
             '--standard=moodle',
             '--extensions=php',
             '-p',
