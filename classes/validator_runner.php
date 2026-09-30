@@ -20,7 +20,7 @@ use coding_exception;
 use EduardoKraus\MoodleStringValidate\Validator;
 
 /**
- * Runs validation commands against an installed plugin.
+ * Runs validation against an installed plugin.
  *
  * @package     local_pluginvalidator
  * @copyright   2026 Eduardo Kraus
@@ -40,10 +40,10 @@ class validator_runner {
     }
 
     /**
-     * Runs EduardoKrausME/moodle-plugin-validate against one plugin.
+     * Runs EduardoKrausME/moodle-plugin-validate and returns structured data.
      *
-     * The validator library is loaded and executed directly in the current PHP
-     * process. This avoids requiring PHP CLI, proc_open(), exec() or shell access.
+     * No CLI process is involved. New validator versions expose validateResult()
+     * directly; the fallback keeps compatibility with older installed engines.
      *
      * @param array $plugin Plugin information.
      * @return array
@@ -64,25 +64,53 @@ class validator_runner {
         require_once($autoload);
 
         try {
-            $checks = (new Validator())->validateDetailed($plugin['rootdir']);
+            $validator = new Validator();
+
+            if (method_exists($validator, 'validateResult')) {
+                $validationresult = $validator->validateResult($plugin['rootdir']);
+                $result = $validationresult->toArray();
+            } else {
+                $checks = $validator->validateDetailed($plugin['rootdir']);
+                $result = $this->normalise_legacy_checks($plugin['component'], $checks);
+            }
+
+            $result['exitcode'] = $result['success'] ? 0 : 1;
+            return $result;
         } catch (\Throwable $e) {
             return [
+                'schema' => 1,
+                'component' => $plugin['component'],
                 'success' => false,
+                'status' => 'error',
+                'summary' => [
+                    'total' => 0,
+                    'ok' => 0,
+                    'warnings' => 0,
+                    'errors' => 1,
+                ],
+                'groups' => [],
+                'runtimeerror' => true,
+                'errormessage' => $e->getMessage(),
                 'exitcode' => 2,
-                'output' => 'ERROR: ' . $e->getMessage(),
-                'command' => '',
             ];
         }
+    }
 
-        $errorcount = 0;
-        $warningcount = 0;
-        $okcount = 0;
-        $currentrule = null;
-        $output = [
-            'Moodle String Validate',
-            str_repeat('=', 22),
-            '',
+    /**
+     * Converts old Check[] responses to the structured schema used by current engines.
+     *
+     * @param string $component Plugin component.
+     * @param array $checks Validator checks.
+     * @return array
+     */
+    private function normalise_legacy_checks(string $component, array $checks): array {
+        $summary = [
+            'total' => 0,
+            'ok' => 0,
+            'warnings' => 0,
+            'errors' => 0,
         ];
+        $groups = [];
 
         foreach ($checks as $check) {
             $rule = $check->rule;
@@ -92,51 +120,77 @@ class validator_runner {
                 $rule = 'general';
             }
 
-            if ($rule !== $currentrule) {
-                if ($currentrule !== null) {
-                    $output[] = '';
-                }
-                $output[] = "## {$rule}";
-                $currentrule = $rule;
+            if ($check->isError()) {
+                $status = 'error';
+            } else if ($check->isWarning()) {
+                $status = 'warning';
+            } else {
+                $status = 'ok';
             }
 
-            if ($check->isWarning()) {
-                $warningcount++;
-                $output[] = "  ▶ WARNING {$check->file}:{$check->line}";
-                $output[] = "    {$check->message}";
-                continue;
+            if (!isset($groups[$rule])) {
+                $groups[$rule] = [
+                    'rule' => $rule,
+                    'status' => 'ok',
+                    'summary' => [
+                        'total' => 0,
+                        'ok' => 0,
+                        'warnings' => 0,
+                        'errors' => 0,
+                    ],
+                    'checks' => [],
+                ];
             }
 
-            if (!$check->isError()) {
-                $okcount++;
+            $summary['total']++;
+            $groups[$rule]['summary']['total']++;
 
-                if ($rule === 'pluginname' && $check->languageString && $check->key === 'pluginname') {
-                    continue;
-                }
-
-                if ($check->key !== '') {
-                    $output[] = '  ▶ OK ' . $check->target();
-                } else {
-                    $output[] = "  ▶ OK {$check->message}";
-                }
-                continue;
+            if ($status === 'error') {
+                $summary['errors']++;
+                $groups[$rule]['summary']['errors']++;
+            } else if ($status === 'warning') {
+                $summary['warnings']++;
+                $groups[$rule]['summary']['warnings']++;
+            } else {
+                $summary['ok']++;
+                $groups[$rule]['summary']['ok']++;
             }
 
-            $errorcount++;
-            $output[] = "  ▶ ERROR {$check->file}:{$check->line}";
-            $output[] = "    {$check->message}";
+            $groups[$rule]['checks'][] = [
+                'status' => $status,
+                'rule' => $rule,
+                'file' => $check->file,
+                'line' => $check->line,
+                'key' => $check->key,
+                'target' => $check->target(),
+                'message' => $check->message,
+                'languageString' => $check->languageString,
+            ];
         }
 
-        $output[] = '';
-        $output[] = $okcount . ' OK, '
-            . $warningcount . ' warning' . ($warningcount === 1 ? '' : 's') . ', '
-            . $errorcount . ' error' . ($errorcount === 1 ? '' : 's') . '.';
+        foreach ($groups as &$group) {
+            if ($group['summary']['errors'] > 0) {
+                $group['status'] = 'error';
+            } else if ($group['summary']['warnings'] > 0) {
+                $group['status'] = 'warning';
+            }
+        }
+        unset($group);
+
+        $status = 'ok';
+        if ($summary['errors'] > 0) {
+            $status = 'error';
+        } else if ($summary['warnings'] > 0) {
+            $status = 'warning';
+        }
 
         return [
-            'success' => $errorcount === 0,
-            'exitcode' => $errorcount === 0 ? 0 : 1,
-            'output' => trim(implode("\n", $output)),
-            'command' => '',
+            'schema' => 1,
+            'component' => $component,
+            'success' => $summary['errors'] === 0,
+            'status' => $status,
+            'summary' => $summary,
+            'groups' => array_values($groups),
         ];
     }
 }
