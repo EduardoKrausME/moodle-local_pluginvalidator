@@ -11,7 +11,7 @@ Navigation:
 1. Plugin types containing installed third-party extensions.
 2. Plugins of the selected type.
 3. Plugin details and available validators.
-4. Run the validator and inspect its raw output.
+4. Run the validator and inspect structured results grouped by validation rule.
 
 Plugins shipped with Moodle are excluded using Moodle's own plugininfo::is_standard() result. The plugin can validate itself because local_pluginvalidator is an extension plugin.
 
@@ -23,9 +23,9 @@ The administrator can install or update it from the plugin detail page. Because 
 
     $CFG->dataroot/local_pluginvalidator/tools/moodle-plugin-validate
 
-The executed command is equivalent to:
+The validator is loaded directly as a PHP library through its autoloader. The Moodle plugin calls `Validator::validateResult()` and consumes the structured result without starting a CLI process or parsing text output.
 
-    php bin/moodle-string-validate /path/to/plugin
+The same validator project still supports text and GitHub Actions output when used from its own CLI, while integrations may use its JSON format or PHP API directly.
 
 An offline bundled fallback is also supported. Place the validator project at:
 
@@ -36,10 +36,10 @@ A downloaded engine takes precedence over a bundled one.
 ## Requirements
 
 - Moodle 4.1 or newer.
-- PHP CLI 8.1 or newer for moodle-plugin-validate.
-- PHP proc_open() enabled to execute the validator.
-- Moodle's PHP CLI path configured when the web PHP binary is not a CLI executable.
+- PHP 8.1 or newer for moodle-plugin-validate.
 - Outbound HTTPS access to GitHub only when installing/updating the engine online.
+
+PHP CLI, `proc_open()`, `exec()`, and `$CFG->pathtophp` are not required by the Moodle integration.
 
 ## Security
 
