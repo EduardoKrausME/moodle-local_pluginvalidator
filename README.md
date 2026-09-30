@@ -2,9 +2,16 @@
 
 A Moodle administrator interface for validating installed third-party plugins.
 
-## Current scope
+## Validation engines
 
-The first version intentionally exposes only one validation: EduardoKrausME/moodle-plugin-validate.
+The plugin uses a validation engine interface and can expose multiple independent validators.
+
+Currently registered engines:
+
+- **Moodle Plugin Validate** — EduardoKrausME/moodle-plugin-validate. Loaded as a PHP library and returns structured results grouped by rule and individual check.
+- **Moodle Plugin CI** — moodlehq/moodle-plugin-ci. The official PHAR is loaded as a PHP library and only its `validate` implementation is called directly. Its native result remains textual.
+
+The engine contract explicitly distinguishes `structured` and `text` result formats. The UI renders each engine according to its native format instead of parsing textual output into artificial structured data.
 
 Navigation:
 
@@ -17,21 +24,19 @@ Plugins shipped with Moodle are excluded using Moodle's own plugininfo::is_stand
 
 ## Validation engine
 
-The validation engine is the latest release of EduardoKrausME/moodle-plugin-validate.
+Each validation engine manages its own upstream release and local installation.
 
-The administrator can install or update it from the plugin detail page. Because the project does not publish a PHAR asset, local_pluginvalidator downloads GitHub's release ZIP, extracts the validator project, and stores it at:
+For Moodle Plugin Validate, the release ZIP is extracted to:
 
     $CFG->dataroot/local_pluginvalidator/tools/moodle-plugin-validate
 
-The validator is loaded directly as a PHP library through its autoloader. The Moodle plugin calls `Validator::validateResult()` and consumes the structured result without starting a CLI process or parsing text output.
+For Moodle Plugin CI, the official release PHAR is stored at:
 
-The same validator project still supports text and GitHub Actions output when used from its own CLI, while integrations may use its JSON format or PHP API directly.
+    $CFG->dataroot/local_pluginvalidator/tools/moodle-plugin-ci/moodle-plugin-ci.phar
 
-An offline bundled fallback is also supported. Place the validator project at:
+Neither integration starts a CLI process. Moodle Plugin Validate is called through `Validator::validateResult()`. Moodle Plugin CI is loaded from its PHAR autoloader and the PHP classes behind its `validate` command are instantiated directly.
 
-    local/pluginvalidator/tools/moodle-plugin-validate
-
-A downloaded engine takes precedence over a bundled one.
+Downloaded engines take precedence over optional bundled copies under `local/pluginvalidator/tools/`.
 
 ## Requirements
 
