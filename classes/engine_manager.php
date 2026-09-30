@@ -20,7 +20,7 @@ use curl;
 use coding_exception;
 
 /**
- * Manages the moodle-plugin-validate engine used by the validator.
+ * Manages the moodle-plugin-validate library used by the validator.
  *
  * @package     local_pluginvalidator
  * @copyright   2026 Eduardo Kraus
@@ -33,24 +33,21 @@ class engine_manager {
     /** Directory used to store the downloaded validator. */
     private const ENGINE_DIRECTORY = 'moodle-plugin-validate';
 
-    /** Validator command inside the downloaded project. */
-    private const EXECUTABLE = 'bin/moodle-string-validate';
-
     /**
-     * Returns the active engine path.
+     * Returns the active validation library root.
      *
      * Downloaded engine has precedence over a bundled fallback.
      *
      * @return string|null
      */
-    public function get_engine_path(): ?string {
-        $downloaded = $this->get_downloaded_path();
-        if (is_readable($downloaded) && filesize($downloaded) > 0) {
+    public function get_engine_root(): ?string {
+        $downloaded = $this->get_engine_directory();
+        if ($this->is_engine_root($downloaded)) {
             return $downloaded;
         }
 
-        $bundled = dirname(__DIR__, 2) . '/tools/' . self::ENGINE_DIRECTORY . '/' . self::EXECUTABLE;
-        if (is_readable($bundled) && filesize($bundled) > 0) {
+        $bundled = dirname(__DIR__, 2) . '/tools/' . self::ENGINE_DIRECTORY;
+        if ($this->is_engine_root($bundled)) {
             return $bundled;
         }
 
@@ -63,8 +60,8 @@ class engine_manager {
      * @return array
      */
     public function get_status(): array {
-        $path = $this->get_engine_path();
-        if ($path === null) {
+        $root = $this->get_engine_root();
+        if ($root === null) {
             return [
                 'available' => false,
                 'version' => '',
@@ -73,8 +70,8 @@ class engine_manager {
             ];
         }
 
-        $downloaded = realpath($this->get_downloaded_path());
-        $active = realpath($path);
+        $downloaded = realpath($this->get_engine_directory());
+        $active = realpath($root);
         $source = ($downloaded !== false && $downloaded === $active)
             ? get_string('enginesourcedownloaded', 'local_pluginvalidator')
             : get_string('enginesourcebundled', 'local_pluginvalidator');
@@ -83,15 +80,15 @@ class engine_manager {
             'available' => true,
             'version' => (string)get_config('local_pluginvalidator', 'engineversion'),
             'source' => $source,
-            'path' => $path,
+            'path' => $root,
         ];
     }
 
     /**
      * Downloads and installs the latest moodle-plugin-validate release.
      *
-     * The project does not publish a PHAR asset. GitHub's release ZIP is downloaded,
-     * extracted and stored in Moodle data so the bundled CLI can be executed directly.
+     * The release is extracted into Moodle data and loaded directly as a PHP
+     * library through its autoloader. No CLI executable is required by Moodle.
      *
      * @return array Release metadata.
      */
@@ -165,7 +162,7 @@ class engine_manager {
         if ($sourceroot === null) {
             @unlink($archive);
             remove_dir($extractdirectory);
-            throw new coding_exception('The moodle-plugin-validate executable was not found in the downloaded release.');
+            throw new coding_exception('The moodle-plugin-validate library was not found in the downloaded release.');
         }
 
         $target = $this->get_engine_directory();
@@ -207,83 +204,13 @@ class engine_manager {
     }
 
     /**
-     * Returns PHP CLI binary path.
-     *
-     * Moodle installations served by PHP-FPM commonly expose PHP_BINARY as
-     * php-fpm, even when the CLI binary is installed. Try Moodle's explicit
-     * setting first, then PHP's bindir and the process PATH.
-     *
-     * @return string
-     */
-    public function get_php_binary(): string {
-        global $CFG;
-
-        if (!empty($CFG->pathtophp) && $this->is_executable_file($CFG->pathtophp)) {
-            return $CFG->pathtophp;
-        }
-
-        if (PHP_SAPI === 'cli' && $this->is_executable_file(PHP_BINARY)) {
-            return PHP_BINARY;
-        }
-
-        $executablename = PHP_OS_FAMILY === 'Windows' ? 'php.exe' : 'php';
-        $versionednames = PHP_OS_FAMILY === 'Windows'
-            ? ['php.exe']
-            : [
-                'php',
-                'php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION,
-                'php' . PHP_MAJOR_VERSION . PHP_MINOR_VERSION,
-            ];
-
-        $candidates = [];
-        if (defined('PHP_BINDIR') && PHP_BINDIR !== '') {
-            foreach ($versionednames as $name) {
-                $candidates[] = PHP_BINDIR . DIRECTORY_SEPARATOR . $name;
-            }
-        }
-
-        $path = getenv('PATH');
-        if (is_string($path) && $path !== '') {
-            foreach (explode(PATH_SEPARATOR, $path) as $directory) {
-                $directory = trim($directory);
-                if ($directory !== '') {
-                    $candidates[] = rtrim($directory, '/\\') . DIRECTORY_SEPARATOR . $executablename;
-                }
-            }
-        }
-
-        if (PHP_OS_FAMILY !== 'Windows') {
-            $candidates[] = '/usr/bin/php';
-            $candidates[] = '/usr/local/bin/php';
-        }
-
-        foreach (array_unique($candidates) as $candidate) {
-            if ($this->is_executable_file($candidate)) {
-                return $candidate;
-            }
-        }
-
-        throw new coding_exception(get_string('phpclinotconfigured', 'local_pluginvalidator'));
-    }
-
-    /**
-     * Checks whether a path points to an executable file.
-     *
-     * @param string $path Candidate executable path.
-     * @return bool
-     */
-    private function is_executable_file(string $path): bool {
-        return is_file($path) && is_executable($path);
-    }
-
-    /**
      * Finds the validator project root inside an extracted GitHub archive.
      *
      * @param string $directory Extracted archive directory.
      * @return string|null
      */
     private function find_extracted_root(string $directory): ?string {
-        if (is_readable($directory . '/' . self::EXECUTABLE) && is_readable($directory . '/autoload.php')) {
+        if ($this->is_engine_root($directory)) {
             return $directory;
         }
 
@@ -293,12 +220,23 @@ class engine_manager {
         }
 
         foreach ($entries as $entry) {
-            if (is_readable($entry . '/' . self::EXECUTABLE) && is_readable($entry . '/autoload.php')) {
+            if ($this->is_engine_root($entry)) {
                 return $entry;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Checks whether a directory is a loadable moodle-plugin-validate library root.
+     *
+     * @param string $directory Candidate engine root.
+     * @return bool
+     */
+    private function is_engine_root(string $directory): bool {
+        return is_readable($directory . '/autoload.php')
+            && is_readable($directory . '/src/Validator.php');
     }
 
     /**
@@ -309,14 +247,5 @@ class engine_manager {
     private function get_engine_directory(): string {
         global $CFG;
         return $CFG->dataroot . '/local_pluginvalidator/tools/' . self::ENGINE_DIRECTORY;
-    }
-
-    /**
-     * Returns downloaded validator executable path.
-     *
-     * @return string
-     */
-    private function get_downloaded_path(): string {
-        return $this->get_engine_directory() . '/' . self::EXECUTABLE;
     }
 }
