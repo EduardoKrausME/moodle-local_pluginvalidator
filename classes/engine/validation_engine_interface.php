@@ -24,6 +24,12 @@ namespace local_pluginvalidator\engine;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface validation_engine_interface {
+    /** Structured validation result. */
+    public const RESULT_STRUCTURED = 'structured';
+
+    /** Native textual validation result. */
+    public const RESULT_TEXT = 'text';
+
     /**
      * Stable engine identifier used in requests and configuration keys.
      *
@@ -46,6 +52,13 @@ interface validation_engine_interface {
     public function get_description(): string;
 
     /**
+     * Returns the native result format produced by this engine.
+     *
+     * @return string One of the RESULT_* constants.
+     */
+    public function get_result_format(): string;
+
+    /**
      * Returns installation and availability information.
      *
      * @return array
@@ -62,7 +75,8 @@ interface validation_engine_interface {
     /**
      * Validates one installed Moodle plugin.
      *
-     * All engines return the same structured schema consumed by plugin.php.
+     * The returned array includes a format key so plugin.php can render the
+     * engine's native result without forcing text engines into a structured model.
      *
      * @param array $plugin Plugin information.
      * @return array
