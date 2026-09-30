@@ -599,7 +599,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
      * @return string
      */
     private function replace_unsafe_string_literals(string $contents): string {
-        $regexp = '(["\'])(?:\\\\\\1|.)*?\\1';
+        $regexp = '(["\'])(?:\\\\\1|.)*?\1';
         $discarded = [];
 
         preg_match_all('@' . $regexp . '@', $contents, $matches);
