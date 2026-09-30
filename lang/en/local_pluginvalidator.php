@@ -24,6 +24,11 @@
 
 $string['back'] = 'Back';
 $string['engine'] = 'Validation engine';
+$string['engine_moodlepluginvalidate'] = 'Moodle Plugin Validate';
+$string['engine_moodlepluginvalidate_desc'] = 'Structured validation from EduardoKrausME/moodle-plugin-validate with separate rules, checks, files and lines.';
+$string['engine_moodlepluginci'] = 'Moodle Plugin CI';
+$string['engine_moodlepluginci_desc'] = 'Runs the moodlehq/moodle-plugin-ci structural validation directly in PHP. This engine natively returns textual results.';
+$string['invalidengine'] = 'The selected validation engine does not exist.';
 $string['engineavailable'] = 'Validation engine available';
 $string['engineinstalled'] = 'Validation engine {$a} installed successfully.';
 $string['engineinstallfailed'] = 'Unable to install the validation engine: {$a}';
