@@ -17,6 +17,7 @@
 namespace local_pluginvalidator;
 
 use coding_exception;
+use EduardoKraus\MoodleStringValidate\Validator;
 
 /**
  * Runs validation commands against an installed plugin.
@@ -41,51 +42,101 @@ class validator_runner {
     /**
      * Runs EduardoKrausME/moodle-plugin-validate against one plugin.
      *
+     * The validator library is loaded and executed directly in the current PHP
+     * process. This avoids requiring PHP CLI, proc_open(), exec() or shell access.
+     *
      * @param array $plugin Plugin information.
      * @return array
      * @throws coding_exception
      */
     public function validate(array $plugin): array {
-        global $CFG;
-
         $enginepath = $this->engine->get_engine_path();
         if ($enginepath === null) {
             throw new coding_exception(get_string('enginenotinstalled', 'local_pluginvalidator'));
         }
-        if (!function_exists('proc_open')) {
-            throw new coding_exception(get_string('procopendisabled', 'local_pluginvalidator'));
+
+        $engineroot = dirname($enginepath, 2);
+        $autoload = $engineroot . '/autoload.php';
+        if (!is_readable($autoload)) {
+            throw new coding_exception('Unable to load the moodle-plugin-validate autoloader.');
         }
 
-        $php = $this->engine->get_php_binary();
-        $command = escapeshellarg($php)
-            . ' ' . escapeshellarg($enginepath)
-            . ' ' . escapeshellarg($plugin['rootdir']);
+        require_once($autoload);
 
-        $descriptors = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
+        try {
+            $checks = (new Validator())->validateDetailed($plugin['rootdir']);
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'exitcode' => 2,
+                'output' => 'ERROR: ' . $e->getMessage(),
+                'command' => '',
+            ];
+        }
+
+        $errorcount = 0;
+        $warningcount = 0;
+        $okcount = 0;
+        $currentrule = null;
+        $output = [
+            'Moodle String Validate',
+            str_repeat('=', 22),
+            '',
         ];
 
-        $process = proc_open($command, $descriptors, $pipes, $CFG->dirroot);
-        if (!is_resource($process)) {
-            throw new coding_exception('Unable to start moodle-plugin-validate.');
+        foreach ($checks as $check) {
+            $rule = $check->rule;
+            if ($rule === '' && str_starts_with($check->key, 'xmldb:')) {
+                $rule = 'installxml';
+            } else if ($rule === '') {
+                $rule = 'general';
+            }
+
+            if ($rule !== $currentrule) {
+                if ($currentrule !== null) {
+                    $output[] = '';
+                }
+                $output[] = "## {$rule}";
+                $currentrule = $rule;
+            }
+
+            if ($check->isWarning()) {
+                $warningcount++;
+                $output[] = "  ▶ WARNING {$check->file}:{$check->line}";
+                $output[] = "    {$check->message}";
+                continue;
+            }
+
+            if (!$check->isError()) {
+                $okcount++;
+
+                if ($rule === 'pluginname' && $check->languageString && $check->key === 'pluginname') {
+                    continue;
+                }
+
+                if ($check->key !== '') {
+                    $output[] = '  ▶ OK ' . $check->target();
+                } else {
+                    $output[] = "  ▶ OK {$check->message}";
+                }
+                continue;
+            }
+
+            $errorcount++;
+            $output[] = "  ▶ ERROR {$check->file}:{$check->line}";
+            $output[] = "    {$check->message}";
         }
 
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-        $exitcode = proc_close($process);
-
-        $output = trim($stdout . ($stderr !== '' ? "\n" . $stderr : ''));
+        $output[] = '';
+        $output[] = $okcount . ' OK, '
+            . $warningcount . ' warning' . ($warningcount === 1 ? '' : 's') . ', '
+            . $errorcount . ' error' . ($errorcount === 1 ? '' : 's') . '.';
 
         return [
-            'success' => $exitcode === 0,
-            'exitcode' => $exitcode,
-            'output' => $output,
-            'command' => $command,
+            'success' => $errorcount === 0,
+            'exitcode' => $errorcount === 0 ? 0 : 1,
+            'output' => trim(implode("\n", $output)),
+            'command' => '',
         ];
     }
 }
