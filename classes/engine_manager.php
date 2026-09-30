@@ -46,7 +46,7 @@ class engine_manager {
             return $downloaded;
         }
 
-        $bundled = dirname(__DIR__, 2) . '/tools/' . self::ENGINE_DIRECTORY;
+        $bundled = dirname(__DIR__) . '/tools/' . self::ENGINE_DIRECTORY;
         if ($this->is_engine_root($bundled)) {
             return $bundled;
         }
