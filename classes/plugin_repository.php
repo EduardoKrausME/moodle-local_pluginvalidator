@@ -126,7 +126,7 @@ class plugin_repository {
 
                 $matches = false;
                 foreach ($haystacks as $haystack) {
-                    if (core_text::strpos(core_text::strtolower((string)$haystack), $needle) !== false) {
+                    if (strpos(core_text::strtolower((string)$haystack), $needle) !== false) {
                         $matches = true;
                         break;
                     }
