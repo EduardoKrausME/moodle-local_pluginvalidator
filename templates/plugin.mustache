@@ -54,7 +54,7 @@
                         <div class="text-warning">{{#str}}enginemissing, local_pluginvalidator{{/str}}</div>
                     {{/engineavailable}}
                 </div>
-                <form method="post" action="{{actionurl}}" class="mb-0">
+                <form method="get" action="{{actionurl}}" class="mb-0">
                     <input type="hidden" name="component" value="{{component}}">
                     <input type="hidden" name="action" value="installengine">
                     <input type="hidden" name="sesskey" value="{{sesskey}}">
