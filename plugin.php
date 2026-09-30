@@ -64,16 +64,81 @@ if ($action !== '') {
             $result = $runner->validate($plugin);
         } catch (Throwable $e) {
             $result = [
+                'schema' => 1,
+                'component' => $plugin['component'],
                 'success' => false,
-                'exitcode' => -1,
-                'output' => $e->getMessage(),
-                'command' => '',
+                'status' => 'error',
+                'summary' => [
+                    'total' => 0,
+                    'ok' => 0,
+                    'warnings' => 0,
+                    'errors' => 1,
+                ],
+                'groups' => [],
+                'runtimeerror' => true,
+                'errormessage' => $e->getMessage(),
+                'exitcode' => 2,
             ];
         }
     }
 }
 
 $enginestatus = $engine->get_status();
+
+$resultsummary = [
+    'total' => 0,
+    'ok' => 0,
+    'warnings' => 0,
+    'errors' => 0,
+];
+$resultgroups = [];
+$resultruntimeerror = false;
+$resulterrormessage = '';
+
+if ($result !== null) {
+    $resultsummary = array_merge($resultsummary, $result['summary'] ?? []);
+    $resultruntimeerror = !empty($result['runtimeerror']);
+    $resulterrormessage = (string)($result['errormessage'] ?? '');
+
+    $statusclasses = [
+        'ok' => 'success',
+        'warning' => 'warning',
+        'error' => 'danger',
+    ];
+    $statuslabels = [
+        'ok' => get_string('statusok', 'local_pluginvalidator'),
+        'warning' => get_string('statuswarning', 'local_pluginvalidator'),
+        'error' => get_string('statuserror', 'local_pluginvalidator'),
+    ];
+
+    foreach ($result['groups'] ?? [] as $group) {
+        $status = $group['status'] ?? 'ok';
+        $group['statusclass'] = $statusclasses[$status] ?? 'secondary';
+        $group['statuslabel'] = $statuslabels[$status] ?? $status;
+        $viewchecks = [];
+
+        foreach ($group['checks'] ?? [] as $check) {
+            $checkstatus = $check['status'] ?? 'ok';
+            $check['statusclass'] = $statusclasses[$checkstatus] ?? 'secondary';
+            $check['statuslabel'] = $statuslabels[$checkstatus] ?? $checkstatus;
+
+            $file = (string)($check['file'] ?? '');
+            $line = (int)($check['line'] ?? 0);
+            $check['haslocation'] = $file !== '' && $file !== '.';
+            $check['location'] = $check['haslocation']
+                ? $file . ($line > 0 ? ':' . $line : '')
+                : '';
+
+            $target = (string)($check['target'] ?? '');
+            $check['hastarget'] = $target !== '' && $target !== $file;
+
+            $viewchecks[] = $check;
+        }
+
+        $group['checks'] = $viewchecks;
+        $resultgroups[] = $group;
+    }
+}
 
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $component]));
@@ -99,8 +164,14 @@ $templatedata = [
     'noticeclass' => $noticeclass,
     'hasresult' => $result !== null,
     'resultsuccess' => $result['success'] ?? false,
-    'resultexitcode' => $result['exitcode'] ?? null,
-    'resultoutput' => $result['output'] ?? '',
+    'resultstatusclass' => ($result['success'] ?? false) ? 'success' : 'danger',
+    'resulttotal' => $resultsummary['total'],
+    'resultok' => $resultsummary['ok'],
+    'resultwarnings' => $resultsummary['warnings'],
+    'resulterrors' => $resultsummary['errors'],
+    'resultgroups' => $resultgroups,
+    'resultruntimeerror' => $resultruntimeerror,
+    'resulterrormessage' => $resulterrormessage,
 ];
 
 echo $OUTPUT->header();
