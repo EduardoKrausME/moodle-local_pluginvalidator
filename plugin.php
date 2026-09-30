@@ -45,6 +45,11 @@ if ($plugin === null) {
 
 $enginemanager = new engine_manager();
 $engines = $enginemanager->get_engines();
+
+if ($engineid === '' && $action !== '') {
+    $engineid = 'moodle_plugin_validate';
+}
+
 $selectedengine = $engineid !== '' ? $enginemanager->get_engine($engineid) : null;
 
 $result = null;
