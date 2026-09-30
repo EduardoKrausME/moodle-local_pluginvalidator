@@ -41,31 +41,33 @@
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div>
-                    <h3 class="h5 mb-1">{{#str}}engine, local_pluginvalidator{{/str}}</h3>
-                    {{#engineavailable}}
-                        <div class="text-success">{{#str}}engineavailable, local_pluginvalidator{{/str}}</div>
-                        <div class="small text-muted">{{engineversion}} {{enginesource}}</div>
-                    {{/engineavailable}}
-                    {{^engineavailable}}
-                        <div class="text-warning">{{#str}}enginemissing, local_pluginvalidator{{/str}}</div>
-                    {{/engineavailable}}
+    {{^hasresult}}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h3 class="h5 mb-1">{{#str}}engine, local_pluginvalidator{{/str}}</h3>
+                        {{#engineavailable}}
+                            <div class="text-success">{{#str}}engineavailable, local_pluginvalidator{{/str}}</div>
+                            <div class="small text-muted">{{engineversion}} {{enginesource}}</div>
+                        {{/engineavailable}}
+                        {{^engineavailable}}
+                            <div class="text-warning">{{#str}}enginemissing, local_pluginvalidator{{/str}}</div>
+                        {{/engineavailable}}
+                    </div>
+                    <form method="get" action="{{{actionurl}}}" class="mb-0">
+                        <input type="hidden" name="component" value="{{component}}">
+                        <input type="hidden" name="action" value="installengine">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            {{#engineavailable}}{{#str}}updateengine, local_pluginvalidator{{/str}}{{/engineavailable}}
+                            {{^engineavailable}}{{#str}}installengine, local_pluginvalidator{{/str}}{{/engineavailable}}
+                        </button>
+                    </form>
                 </div>
-                <form method="get" action="{{{actionurl}}}" class="mb-0">
-                    <input type="hidden" name="component" value="{{component}}">
-                    <input type="hidden" name="action" value="installengine">
-                    <input type="hidden" name="sesskey" value="{{sesskey}}">
-                    <button type="submit" class="btn btn-outline-secondary">
-                        {{#engineavailable}}{{#str}}updateengine, local_pluginvalidator{{/str}}{{/engineavailable}}
-                        {{^engineavailable}}{{#str}}installengine, local_pluginvalidator{{/str}}{{/engineavailable}}
-                    </button>
-                </form>
             </div>
         </div>
-    </div>
+    {{/hasresult}}
 
     <h3 class="h4 mb-3">{{#str}}validations, local_pluginvalidator{{/str}}</h3>
 
