@@ -47,6 +47,10 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
         return get_string('engine_moodlepluginvalidate_desc', 'local_pluginvalidator');
     }
 
+    public function get_result_format(): string {
+        return validation_engine_interface::RESULT_STRUCTURED;
+    }
+
     public function get_status(): array {
         $root = $this->get_engine_root();
         if ($root === null) {
@@ -209,6 +213,7 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
             }
 
             $result['engine'] = $this->get_id();
+            $result['format'] = $this->get_result_format();
             return $result;
         } catch (\Throwable $e) {
             return $this->runtime_error($plugin['component'], $e->getMessage());
@@ -428,6 +433,7 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
             'schema' => 1,
             'component' => $component,
             'engine' => $this->get_id(),
+            'format' => $this->get_result_format(),
             'success' => false,
             'status' => 'error',
             'summary' => [
