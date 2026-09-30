@@ -27,27 +27,82 @@
         <p class="text-muted mb-0">{{intro}}</p>
     </div>
 
-    {{#hastypes}}
-        <div class="row g-3">
-            {{#types}}
-                <div class="col-12 col-md-6 col-xl-4">
-                    <a class="card h-100 text-decoration-none" href="{{url}}">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between gap-3">
-                                <div>
-                                    <h3 class="h5 mb-1 text-body">{{name}}</h3>
-                                    <div class="text-muted"><code>{{type}}</code></div>
+    <form action="{{searchurl}}" method="get" class="mb-4">
+        <label for="local-pluginvalidator-search" class="form-label">
+            {{#str}}searchplugins, local_pluginvalidator{{/str}}
+        </label>
+        <div class="input-group">
+            <input
+                type="search"
+                id="local-pluginvalidator-search"
+                name="q"
+                value="{{query}}"
+                class="form-control"
+                placeholder="{{#str}}searchplaceholder, local_pluginvalidator{{/str}}"
+            >
+            <button type="submit" class="btn btn-primary">
+                {{#str}}search, local_pluginvalidator{{/str}}
+            </button>
+        </div>
+    </form>
+
+    {{#hasquery}}
+        <div class="mb-3">
+            <h3 class="h5 mb-0">{{resulttitle}}</h3>
+        </div>
+
+        {{#hasresults}}
+            <div class="list-group">
+                {{#plugins}}
+                    <a href="{{url}}" class="list-group-item list-group-item-action py-3">
+                        <div class="d-flex w-100 justify-content-between align-items-start gap-3">
+                            <div>
+                                <h4 class="h5 mb-1">{{displayname}}</h4>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <code>{{component}}</code>
+                                    <span class="badge bg-secondary">{{typename}}</span>
+                                    <span class="text-muted small">{{type}}</span>
                                 </div>
-                                <span class="badge bg-secondary rounded-pill">{{count}}</span>
                             </div>
+                            {{#release}}
+                                <span class="text-muted small">{{release}}</span>
+                            {{/release}}
                         </div>
                     </a>
-                </div>
-            {{/types}}
-        </div>
-    {{/hastypes}}
+                {{/plugins}}
+            </div>
+        {{/hasresults}}
 
-    {{^hastypes}}
-        <div class="alert alert-info mb-0">{{#str}}nothirdpartyplugins, local_pluginvalidator{{/str}}</div>
-    {{/hastypes}}
+        {{^hasresults}}
+            <div class="alert alert-info mb-0">
+                {{#str}}nosearchresults, local_pluginvalidator{{/str}}
+            </div>
+        {{/hasresults}}
+    {{/hasquery}}
+
+    {{^hasquery}}
+        {{#hastypes}}
+            <div class="row g-3">
+                {{#types}}
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <a class="card h-100 text-decoration-none" href="{{url}}">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between gap-3">
+                                    <div>
+                                        <h3 class="h5 mb-1 text-body">{{name}}</h3>
+                                        <div class="text-muted"><code>{{type}}</code></div>
+                                    </div>
+                                    <span class="badge bg-secondary rounded-pill">{{count}}</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {{/types}}
+            </div>
+        {{/hastypes}}
+
+        {{^hastypes}}
+            <div class="alert alert-info mb-0">{{#str}}nothirdpartyplugins, local_pluginvalidator{{/str}}</div>
+        {{/hastypes}}
+    {{/hasquery}}
 </div>
