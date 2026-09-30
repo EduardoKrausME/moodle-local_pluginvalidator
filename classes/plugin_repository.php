@@ -102,7 +102,7 @@ class plugin_repository {
             return [];
         }
 
-        $needle = core_text::strtolower($query);
+        $needle = strtolower($query);
         $result = [];
         $pluginmanager = core_plugin_manager::instance();
 
@@ -126,7 +126,7 @@ class plugin_repository {
 
                 $matches = false;
                 foreach ($haystacks as $haystack) {
-                    if (strpos(core_text::strtolower((string)$haystack), $needle) !== false) {
+                    if (strpos(strtolower((string)$haystack), $needle) !== false) {
                         $matches = true;
                         break;
                     }
