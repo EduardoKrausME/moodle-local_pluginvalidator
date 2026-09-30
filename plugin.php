@@ -75,9 +75,9 @@ if ($action !== '') {
                     'errors' => 1,
                 ],
                 'groups' => [],
-                'runtimeerror' => true,
-                'errormessage' => $e->getMessage(),
-                'exitcode' => 2,
+                'runtimeError' => [
+                    'message' => $e->getMessage(),
+                ],
             ];
         }
     }
@@ -97,8 +97,8 @@ $resulterrormessage = '';
 
 if ($result !== null) {
     $resultsummary = array_merge($resultsummary, $result['summary'] ?? []);
-    $resultruntimeerror = !empty($result['runtimeerror']);
-    $resulterrormessage = (string)($result['errormessage'] ?? '');
+    $resultruntimeerror = !empty($result['runtimeError']);
+    $resulterrormessage = (string)($result['runtimeError']['message'] ?? '');
 
     $statusclasses = [
         'ok' => 'success',
@@ -164,8 +164,6 @@ $templatedata = [
     'noticeclass' => $noticeclass,
     'hasresult' => $result !== null,
     'resultsuccess' => $result['success'] ?? false,
-    'resultstatusclass' => ($result['success'] ?? false) ? 'success' : 'danger',
-    'resulttotal' => $resultsummary['total'],
     'resultok' => $resultsummary['ok'],
     'resultwarnings' => $resultsummary['warnings'],
     'resulterrors' => $resultsummary['errors'],
