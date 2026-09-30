@@ -24,6 +24,11 @@
 
 $string['back'] = 'Voltar';
 $string['engine'] = 'Motor de validação';
+$string['engine_moodlepluginvalidate'] = 'Moodle Plugin Validate';
+$string['engine_moodlepluginvalidate_desc'] = 'Validação estruturada do projeto EduardoKrausME/moodle-plugin-validate, com regras, checks, arquivos e linhas separados.';
+$string['engine_moodlepluginci'] = 'Moodle Plugin CI';
+$string['engine_moodlepluginci_desc'] = 'Executa diretamente em PHP a validação estrutural do moodlehq/moodle-plugin-ci. O resultado nativo deste motor é textual.';
+$string['invalidengine'] = 'O motor de validação selecionado não existe.';
 $string['engineavailable'] = 'Motor de validação disponível';
 $string['engineinstalled'] = 'Motor de validação {$a} instalado com sucesso.';
 $string['engineinstallfailed'] = 'Não foi possível instalar o motor de validação: {$a}';
