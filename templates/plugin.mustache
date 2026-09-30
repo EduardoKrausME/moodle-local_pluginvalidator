@@ -54,7 +54,7 @@
                         <div class="text-warning">{{#str}}enginemissing, local_pluginvalidator{{/str}}</div>
                     {{/engineavailable}}
                 </div>
-                <form method="get" action="{{actionurl}}" class="mb-0">
+                <form method="get" action="{{{actionurl}}}" class="mb-0">
                     <input type="hidden" name="component" value="{{component}}">
                     <input type="hidden" name="action" value="installengine">
                     <input type="hidden" name="sesskey" value="{{sesskey}}">
@@ -77,7 +77,7 @@
                     <p class="text-muted mb-0">{{#str}}validator_desc, local_pluginvalidator{{/str}}</p>
                 </div>
                 {{#engineavailable}}
-                    <form method="post" action="{{actionurl}}" class="mb-0">
+                    <form method="post" action="{{{actionurl}}}" class="mb-0">
                         <input type="hidden" name="component" value="{{component}}">
                         <input type="hidden" name="action" value="validate">
                         <input type="hidden" name="sesskey" value="{{sesskey}}">
@@ -92,16 +92,87 @@
     </div>
 
     {{#hasresult}}
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card mb-4">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <strong>{{#str}}result, local_pluginvalidator{{/str}}</strong>
-                {{#resultsuccess}}<span class="badge bg-success">{{#str}}passed, local_pluginvalidator{{/str}}</span>{{/resultsuccess}}
-                {{^resultsuccess}}<span class="badge bg-danger">{{#str}}failed, local_pluginvalidator{{/str}}</span>{{/resultsuccess}}
+                {{#resultsuccess}}
+                    <span class="badge bg-success">{{#str}}passed, local_pluginvalidator{{/str}}</span>
+                {{/resultsuccess}}
+                {{^resultsuccess}}
+                    <span class="badge bg-danger">{{#str}}failed, local_pluginvalidator{{/str}}</span>
+                {{/resultsuccess}}
             </div>
             <div class="card-body">
-                <div class="small text-muted mb-2">Exit code: {{resultexitcode}}</div>
-                <pre class="bg-light border rounded p-3 mb-0 overflow-auto"><code>{{resultoutput}}</code></pre>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-success">
+                        {{resultok}} {{#str}}summaryok, local_pluginvalidator{{/str}}
+                    </span>
+                    <span class="badge bg-warning text-dark">
+                        {{resultwarnings}} {{#str}}summarywarnings, local_pluginvalidator{{/str}}
+                    </span>
+                    <span class="badge bg-danger">
+                        {{resulterrors}} {{#str}}summaryerrors, local_pluginvalidator{{/str}}
+                    </span>
+                </div>
             </div>
         </div>
+
+        {{#resultruntimeerror}}
+            <div class="alert alert-danger">
+                <strong>{{#str}}validationruntimeerror, local_pluginvalidator{{/str}}:</strong>
+                {{resulterrormessage}}
+            </div>
+        {{/resultruntimeerror}}
+
+        {{#resultgroups}}
+            <div class="card mb-3 border-{{statusclass}}">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <code class="fs-6">{{rule}}</code>
+                        <span class="badge bg-{{statusclass}}">{{statuslabel}}</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 small">
+                        {{#summary.ok}}
+                            <span class="text-success">{{summary.ok}} {{#str}}summaryok, local_pluginvalidator{{/str}}</span>
+                        {{/summary.ok}}
+                        {{#summary.warnings}}
+                            <span class="text-warning">{{summary.warnings}} {{#str}}summarywarnings, local_pluginvalidator{{/str}}</span>
+                        {{/summary.warnings}}
+                        {{#summary.errors}}
+                            <span class="text-danger">{{summary.errors}} {{#str}}summaryerrors, local_pluginvalidator{{/str}}</span>
+                        {{/summary.errors}}
+                    </div>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    {{#checks}}
+                        <div class="list-group-item">
+                            <div class="d-flex flex-column flex-md-row align-items-md-start gap-2">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-{{statusclass}}">{{statuslabel}}</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div>{{message}}</div>
+                                    {{#haslocation}}
+                                        <div class="small text-muted mt-1">
+                                            <code>{{location}}</code>
+                                            {{#hastarget}}
+                                                <span class="mx-1">&middot;</span>
+                                                <code>{{target}}</code>
+                                            {{/hastarget}}
+                                        </div>
+                                    {{/haslocation}}
+                                    {{^haslocation}}
+                                        {{#hastarget}}
+                                            <div class="small text-muted mt-1"><code>{{target}}</code></div>
+                                        {{/hastarget}}
+                                    {{/haslocation}}
+                                </div>
+                            </div>
+                        </div>
+                    {{/checks}}
+                </div>
+            </div>
+        {{/resultgroups}}
     {{/hasresult}}
 </div>
