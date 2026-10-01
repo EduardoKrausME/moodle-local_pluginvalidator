@@ -22,13 +22,14 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die;
+
 $string['back'] = 'Back';
 $string['engine'] = 'Validation engine';
-$string['engine_moodlepluginvalidate'] = 'Moodle Plugin Validate';
-$string['engine_moodlepluginvalidate_desc'] = 'Structured validation from EduardoKrausME/moodle-plugin-validate with separate rules, checks, files and lines.';
 $string['engine_moodlepluginci'] = 'Moodle Plugin CI';
 $string['engine_moodlepluginci_desc'] = 'Runs directly in PHP, in this order: savepoints, validate and PHPCS with warnings treated as errors. This engine natively returns textual results.';
-$string['invalidengine'] = 'The selected validation engine does not exist.';
+$string['engine_moodlepluginvalidate'] = 'Moodle Plugin Validate';
+$string['engine_moodlepluginvalidate_desc'] = 'Structured validation from EduardoKrausME/moodle-plugin-validate with separate rules, checks, files and lines.';
 $string['engineavailable'] = 'Validation engine available';
 $string['engineinstalled'] = 'Validation engine {$a} installed successfully.';
 $string['engineinstallfailed'] = 'Unable to install the validation engine: {$a}';
@@ -37,33 +38,34 @@ $string['enginenotinstalled'] = 'Install the validation engine before running va
 $string['enginesourcebundled'] = '(bundled)';
 $string['enginesourcedownloaded'] = '(downloaded)';
 $string['failed'] = 'Failed';
+$string['howtofix'] = 'How to fix';
 $string['installengine'] = 'Install engine';
+$string['invalidengine'] = 'The selected validation engine does not exist.';
 $string['invalidplugin'] = 'The selected plugin does not exist or is a standard Moodle plugin.';
+$string['nosearchresults'] = 'No third-party plugins were found for this search.';
 $string['nothirdpartyplugins'] = 'No third-party plugins were found.';
 $string['passed'] = 'Passed';
 $string['pluginname'] = 'Plugin validator';
 $string['privacy:metadata'] = 'The Plugin validator does not store personal data.';
 $string['release'] = 'Release';
 $string['result'] = 'Result';
-$string['statusok'] = 'OK';
-$string['statuswarning'] = 'Warning';
-$string['statuserror'] = 'Error';
-$string['summaryok'] = 'OK';
-$string['summarywarnings'] = 'Warnings';
-$string['summaryerrors'] = 'Errors';
-$string['validationruntimeerror'] = 'Validator runtime error';
-$string['whythishappened'] = 'Why this happened';
-$string['howtofix'] = 'How to fix';
 $string['runvalidation'] = 'Run validation';
 $string['search'] = 'Search';
-$string['searchplugins'] = 'Search plugins';
 $string['searchplaceholder'] = 'Plugin name, component or type';
+$string['searchplugins'] = 'Search plugins';
 $string['searchresultsfor'] = 'Results for "{$a}"';
-$string['nosearchresults'] = 'No third-party plugins were found for this search.';
+$string['statuserror'] = 'Error';
+$string['statusok'] = 'OK';
+$string['statuswarning'] = 'Warning';
+$string['summaryerrors'] = 'Errors';
+$string['summaryok'] = 'OK';
+$string['summarywarnings'] = 'Warnings';
 $string['thirdpartyonly'] = 'Only installed extension plugins are shown. Standard Moodle plugins are excluded automatically.';
 $string['updateengine'] = 'Update engine';
+$string['validationruntimeerror'] = 'Validator runtime error';
 $string['validations'] = 'Validations';
 $string['validator_desc'] = 'Runs the EduardoKrausME/moodle-plugin-validate library directly against this installed plugin.';
 $string['version'] = 'Version';
 $string['welcome'] = 'Plugin validator';
 $string['welcome_desc'] = 'Select a plugin type to inspect installed third-party plugins. Plugins shipped with Moodle are hidden automatically.';
+$string['whythishappened'] = 'Why this happened';

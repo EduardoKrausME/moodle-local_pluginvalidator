@@ -36,8 +36,10 @@
             <div><code>{{component}}</code></div>
         </div>
         <div class="text-lg-end text-muted small">
-            {{#release}}<div>{{#str}}release, local_pluginvalidator{{/str}}: {{release}}</div>{{/release}}
-            {{#versiondisk}}<div>{{#str}}version, local_pluginvalidator{{/str}}: {{versiondisk}}</div>{{/versiondisk}}
+            {{#release}}
+                <div>{{#str}}release, local_pluginvalidator{{/str}}: {{release}}</div>{{/release}}
+            {{#versiondisk}}
+                <div>{{#str}}version, local_pluginvalidator{{/str}}: {{versiondisk}}</div>{{/versiondisk}}
         </div>
     </div>
 
@@ -54,7 +56,8 @@
 
                             {{#available}}
                                 <div class="small">
-                                    <span class="text-success">{{#str}}engineavailable, local_pluginvalidator{{/str}}</span>
+                                    <span class="text-success">{{#str}}
+                                        engineavailable, local_pluginvalidator{{/str}}</span>
                                     {{#version}}<span class="text-muted ms-2">{{version}} {{source}}</span>{{/version}}
                                 </div>
                             {{/available}}
@@ -161,13 +164,16 @@
                         </div>
                         <div class="d-flex flex-wrap gap-2 small">
                             {{#summary.ok}}
-                                <span class="text-success">{{summary.ok}} {{#str}}summaryok, local_pluginvalidator{{/str}}</span>
+                                <span class="text-success">{{summary.ok}} {{#str}}
+                                    summaryok, local_pluginvalidator{{/str}}</span>
                             {{/summary.ok}}
                             {{#summary.warnings}}
-                                <span class="text-warning">{{summary.warnings}} {{#str}}summarywarnings, local_pluginvalidator{{/str}}</span>
+                                <span class="text-warning">{{summary.warnings}} {{#str}}
+                                    summarywarnings, local_pluginvalidator{{/str}}</span>
                             {{/summary.warnings}}
                             {{#summary.errors}}
-                                <span class="text-danger">{{summary.errors}} {{#str}}summaryerrors, local_pluginvalidator{{/str}}</span>
+                                <span class="text-danger">{{summary.errors}} {{#str}}
+                                    summaryerrors, local_pluginvalidator{{/str}}</span>
                             {{/summary.errors}}
                         </div>
                     </div>

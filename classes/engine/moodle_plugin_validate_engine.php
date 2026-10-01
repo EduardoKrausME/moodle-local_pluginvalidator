@@ -19,6 +19,7 @@ namespace local_pluginvalidator\engine;
 use coding_exception;
 use curl;
 use EduardoKraus\MoodleStringValidate\Validator;
+use Throwable;
 
 /**
  * EduardoKrausME/moodle-plugin-validate engine.
@@ -35,22 +36,47 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
     /** Directory used to store the downloaded validator. */
     private const ENGINE_DIRECTORY = 'moodle-plugin-validate';
 
+    /**
+     * Method get_id.
+     *
+     * @return string Return value.
+     */
     public function get_id(): string {
         return 'moodle_plugin_validate';
     }
 
+    /**
+     * Method get_name.
+     *
+     * @return string Return value.
+     */
     public function get_name(): string {
         return get_string('engine_moodlepluginvalidate', 'local_pluginvalidator');
     }
 
+    /**
+     * Method get_description.
+     *
+     * @return string Return value.
+     */
     public function get_description(): string {
         return get_string('engine_moodlepluginvalidate_desc', 'local_pluginvalidator');
     }
 
+    /**
+     * Method get_result_format.
+     *
+     * @return string Return value.
+     */
     public function get_result_format(): string {
         return validation_engine_interface::RESULT_STRUCTURED;
     }
 
+    /**
+     * Method get_status.
+     *
+     * @return array Return value.
+     */
     public function get_status(): array {
         $root = $this->get_engine_root();
         if ($root === null) {
@@ -86,6 +112,11 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
         ];
     }
 
+    /**
+     * Method install_latest.
+     *
+     * @return array Return value.
+     */
     public function install_latest(): array {
         global $CFG;
 
@@ -187,6 +218,12 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
         ];
     }
 
+    /**
+     * Method validate.
+     *
+     * @param array $plugin Parameter plugin.
+     * @return array Return value.
+     */
     public function validate(array $plugin): array {
         $engineroot = $this->get_engine_root();
         if ($engineroot === null) {
@@ -215,7 +252,7 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
             $result['engine'] = $this->get_id();
             $result['format'] = $this->get_result_format();
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->runtime_error($plugin['component'], $e->getMessage());
         }
     }

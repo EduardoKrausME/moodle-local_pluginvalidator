@@ -49,7 +49,7 @@ $PAGE->set_heading(get_string('pluginname', 'local_pluginvalidator'));
 $templatedata = [
     'typename' => $typename,
     'backurl' => (new moodle_url('/local/pluginvalidator/index.php'))->out(false),
-    'plugins' => array_values(array_map(static function(array $plugin): array {
+    'plugins' => array_values(array_map(static function (array $plugin): array {
         $plugin['url'] = new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $plugin['component']]);
         return $plugin;
     }, $plugins)),

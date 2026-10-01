@@ -49,7 +49,7 @@ class plugin_repository {
             ];
         }
 
-        uasort($result, static function(array $a, array $b): int {
+        uasort($result, static function (array $a, array $b): int {
             return strcasecmp($a['name'], $b['name']);
         });
 
@@ -80,7 +80,7 @@ class plugin_repository {
             $result[$name] = $this->normalise_plugin($plugininfo);
         }
 
-        uasort($result, static function(array $a, array $b): int {
+        uasort($result, static function (array $a, array $b): int {
             return strcasecmp($a['displayname'], $b['displayname']);
         });
 
@@ -141,7 +141,7 @@ class plugin_repository {
             }
         }
 
-        usort($result, static function(array $a, array $b): int {
+        usort($result, static function (array $a, array $b): int {
             $comparison = strcasecmp($a['displayname'], $b['displayname']);
             if ($comparison !== 0) {
                 return $comparison;

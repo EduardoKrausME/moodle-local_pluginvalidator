@@ -19,12 +19,17 @@ namespace local_pluginvalidator\engine;
 use coding_exception;
 use core_component;
 use curl;
+use FilesystemIterator;
 use MoodlePluginCI\Bridge\MoodlePlugin;
 use MoodlePluginCI\PluginValidate\Plugin;
 use MoodlePluginCI\PluginValidate\PluginValidate;
 use MoodlePluginCI\PluginValidate\Requirements\RequirementsResolver;
 use PHP_CodeSniffer\Runner;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Symfony\Component\Finder\Finder;
+use Throwable;
 
 /**
  * Moodle HQ moodle-plugin-ci validation engine.
@@ -61,22 +66,47 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
         . 'PSR2.Classes.ClassDeclaration,'
         . 'Universal.OOStructures.AlphabeticExtendsImplements';
 
+    /**
+     * Method get_id.
+     *
+     * @return string Return value.
+     */
     public function get_id(): string {
         return 'moodle_plugin_ci';
     }
 
+    /**
+     * Method get_name.
+     *
+     * @return string Return value.
+     */
     public function get_name(): string {
         return get_string('engine_moodlepluginci', 'local_pluginvalidator');
     }
 
+    /**
+     * Method get_description.
+     *
+     * @return string Return value.
+     */
     public function get_description(): string {
         return get_string('engine_moodlepluginci_desc', 'local_pluginvalidator');
     }
 
+    /**
+     * Method get_result_format.
+     *
+     * @return string Return value.
+     */
     public function get_result_format(): string {
         return validation_engine_interface::RESULT_TEXT;
     }
 
+    /**
+     * Method get_status.
+     *
+     * @return array Return value.
+     */
     public function get_status(): array {
         $path = $this->get_engine_path();
         if ($path === null) {
@@ -105,6 +135,11 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
         ];
     }
 
+    /**
+     * Method install_latest.
+     *
+     * @return array Return value.
+     */
     public function install_latest(): array {
         global $CFG;
 
@@ -183,6 +218,12 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
         ];
     }
 
+    /**
+     * Method validate.
+     *
+     * @param array $plugin Parameter plugin.
+     * @return array Return value.
+     */
     public function validate(array $plugin): array {
         $enginepath = $this->get_engine_path();
         if ($enginepath === null) {
@@ -224,7 +265,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
                 'status' => $success ? 'ok' : 'error',
                 'output' => trim(implode("\n", $output)),
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'schema' => 1,
                 'engine' => $this->get_id(),
@@ -571,7 +612,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
             $errors = (int)($runner->reporter->totalErrors ?? 0);
             $warnings = (int)($runner->reporter->totalWarnings ?? 0);
             $success = $errors === 0 && $warnings <= 0;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $buffer = (string)ob_get_clean();
             $output = trim($buffer . "\nERROR: " . $e->getMessage());
             $success = false;
@@ -612,11 +653,11 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
     private function find_upgrade_files(string $root): array {
         $files = [];
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
         );
 
-        /** @var \SplFileInfo $item */
+        /** @var SplFileInfo $item */
         foreach ($iterator as $item) {
             if (!$item->isFile() || $item->getFilename() !== 'upgrade.php') {
                 continue;
@@ -816,7 +857,7 @@ class moodle_plugin_ci_engine implements validation_engine_interface {
 
         try {
             return is_readable('phar://' . $path . '/vendor/autoload.php');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }

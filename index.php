@@ -42,7 +42,7 @@ $repository = new plugin_repository();
 $types = $repository->get_types_with_extensions();
 $plugins = $query !== '' ? $repository->search_extensions($query) : [];
 
-$plugins = array_map(static function(array $plugin): array {
+$plugins = array_map(static function (array $plugin): array {
     $plugin['url'] = new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $plugin['component']]);
     return $plugin;
 }, $plugins);
@@ -56,7 +56,7 @@ $templatedata = [
     'resulttitle' => get_string('searchresultsfor', 'local_pluginvalidator', $query),
     'plugins' => $plugins,
     'hastypes' => !empty($types),
-    'types' => array_values(array_map(static function(array $type): array {
+    'types' => array_values(array_map(static function (array $type): array {
         $type['url'] = new moodle_url('/local/pluginvalidator/plugins.php', ['type' => $type['type']]);
         return $type;
     }, $types)),
