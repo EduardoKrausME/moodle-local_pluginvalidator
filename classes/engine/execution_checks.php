@@ -958,7 +958,9 @@ class execution_checks {
             if ($setting->get_status() !== \base_setting::NOT_LOCKED) {
                 $setting->set_status(\base_setting::NOT_LOCKED);
             }
-            $setting->set_value(false);
+            if ($setting->get_status() === \base_setting::NOT_LOCKED) {
+                $setting->set_value(false);
+            }
         }
     }
 
