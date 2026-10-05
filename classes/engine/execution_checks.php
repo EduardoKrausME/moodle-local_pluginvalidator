@@ -959,9 +959,9 @@ class execution_checks {
     /** Loads one legacy db/*.php array variable in isolated scope. */
     private function load_array_file(string $file, string $variable): array {
         $loader = static function(string $path, string $name): array {
-            \${$name} = [];
+            ${$name} = [];
             include($path);
-            $value = \${$name};
+            $value = ${$name};
             return is_array($value) ? $value : [];
         };
         return $loader($file, $variable);
