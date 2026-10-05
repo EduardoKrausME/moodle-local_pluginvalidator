@@ -17,7 +17,7 @@
 namespace local_pluginvalidator;
 
 use coding_exception;
-use local_pluginvalidator\engine\moodle_plugin_ci_engine;
+use local_pluginvalidator\engine\execution_engine;
 use local_pluginvalidator\engine\moodle_plugin_validate_engine;
 use local_pluginvalidator\engine\validation_engine_interface;
 
@@ -37,7 +37,7 @@ class engine_manager {
      */
     public function __construct() {
         $this->register_engine(new moodle_plugin_validate_engine());
-        $this->register_engine(new moodle_plugin_ci_engine());
+        $this->register_engine(new execution_engine());
     }
 
     /**
