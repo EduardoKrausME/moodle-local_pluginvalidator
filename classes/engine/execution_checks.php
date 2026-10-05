@@ -324,7 +324,11 @@ class execution_checks {
             }
             if ($newcmid) {
                 try {
-                    course_delete_module($newcmid);
+                    if (class_exists('\\core_courseformat\\formatactions')) {
+                        \core_courseformat\formatactions::cm((int)$module['course']->id)->delete($newcmid);
+                    } else {
+                        course_delete_module($newcmid);
+                    }
                 } catch (Throwable $ignored) {
                     // The failed cleanup should not replace the actual validation result.
                 }
@@ -489,20 +493,12 @@ class execution_checks {
         $rule = 'execution:admin_settings';
         try {
             require_once($CFG->libdir . '/adminlib.php');
-            if (!class_exists('admin_root')) {
-                throw new coding_exception('admin_root is not available.');
+            $adminroot = admin_get_root(true, true);
+            if (!$adminroot instanceof \admin_root) {
+                throw new coding_exception('admin_get_root() did not return an administration tree.');
             }
-            $loader = static function(string $settingsfile): void {
-                global $CFG, $DB, $USER, $PAGE;
-
-                $ADMIN = new \admin_root(true);
-                $settings = null;
-                $hassiteconfig = true;
-                include($settingsfile);
-            };
-            $loader($file);
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                'settings.php built successfully against an isolated administration tree.', 'settings.php');
+                'settings.php loaded successfully while Moodle rebuilt the full administration tree.', 'settings.php');
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 'settings.php failed while building the administration tree: ' . $e->getMessage(), 'settings.php');
