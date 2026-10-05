@@ -302,16 +302,46 @@ class execution_engine implements validation_engine_interface {
                     );
                 }
 
-                \external_api::external_function_info($registered);
+                $registeredinfo = \external_api::external_function_info($registered);
+                $arguments = $this->get_safe_external_arguments($registeredinfo->parameters_desc);
+                $type = (string)($definition['type'] ?? '');
 
-                $this->add_check(
-                    $groups,
-                    $rule,
-                    'ok',
-                    get_string('executionserviceok', 'local_pluginvalidator', $name),
-                    'db/services.php',
-                    $info->classname . '::' . $info->methodname
-                );
+                if ($type === 'read' && $arguments !== null) {
+                    $response = \external_api::call_external_function($name, $arguments);
+                    if (!empty($response['error'])) {
+                        $exception = $response['exception'] ?? null;
+                        $message = is_object($exception)
+                            ? (string)($exception->message ?? 'Unknown external function error.')
+                            : 'Unknown external function error.';
+                        throw new coding_exception($message);
+                    }
+
+                    $this->add_check(
+                        $groups,
+                        $rule,
+                        'ok',
+                        get_string('executionserviceexecuted', 'local_pluginvalidator', $name),
+                        'db/services.php',
+                        $info->classname . '::' . $info->methodname
+                    );
+                } else {
+                    $reason = $type !== 'read'
+                        ? get_string('executionserviceskipwrite', 'local_pluginvalidator')
+                        : get_string('executionserviceskipparams', 'local_pluginvalidator');
+
+                    $data = (object)[
+                        'name' => $name,
+                        'reason' => $reason,
+                    ];
+                    $this->add_check(
+                        $groups,
+                        $rule,
+                        'warning',
+                        get_string('executionservicecontractonly', 'local_pluginvalidator', $data),
+                        'db/services.php',
+                        $info->classname . '::' . $info->methodname
+                    );
+                }
             } catch (Throwable $e) {
                 $data = (object)[
                     'name' => $name,
@@ -327,6 +357,32 @@ class execution_engine implements validation_engine_interface {
                 );
             }
         }
+    }
+
+    /**
+     * Returns arguments that are safe to use for a real external function call.
+     *
+     * Only functions without required top-level parameters are executable without
+     * inventing IDs or business data. VALUE_DEFAULT parameters use their declared
+     * defaults and VALUE_OPTIONAL parameters are omitted.
+     *
+     * @param \external_function_parameters $parameters Parameter description.
+     * @return array|null Arguments, or null when real input is required.
+     */
+    private function get_safe_external_arguments(\external_function_parameters $parameters): ?array {
+        $arguments = [];
+
+        foreach ($parameters->keys as $name => $description) {
+            if ($description->required === VALUE_REQUIRED) {
+                return null;
+            }
+
+            if ($description->required === VALUE_DEFAULT) {
+                $arguments[$name] = $description->default;
+            }
+        }
+
+        return $arguments;
     }
 
     /**
