@@ -1066,7 +1066,10 @@ class execution_checks {
         if (is_array($callback) && count($callback) === 2) {
             return (is_object($callback[0]) ? get_class($callback[0]) : (string)$callback[0]) . '::' . $callback[1];
         }
-        return get_debug_type($callback);    /**
+        return get_debug_type($callback);
+    }
+
+    /**
      * Discovers autoloadable plugin classes using Moodle's classes/ path convention.
      *
      * A subdirectory can be supplied when a validator only needs one class family.
@@ -1104,9 +1107,6 @@ class execution_checks {
             $classes[] = $namespace . '\\' . str_replace(DIRECTORY_SEPARATOR, '\\', $relative);
         }
         return $classes;
-    }
-
-
     }
 
     /** Converts an autoload class name back to a relative plugin file. */
