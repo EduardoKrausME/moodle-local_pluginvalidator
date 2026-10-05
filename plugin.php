@@ -120,6 +120,9 @@ $resultsummary = [
     'ok' => 0,
     'warnings' => 0,
     'errors' => 0,
+    'executed' => 0,
+    'contract' => 0,
+    'notapplicable' => 0,
 ];
 $resultgroups = [];
 $resultruntimeerror = false;
@@ -156,6 +159,16 @@ if ($result !== null) {
             'warning' => get_string('statuswarning', 'local_pluginvalidator'),
             'error' => get_string('statuserror', 'local_pluginvalidator'),
         ];
+        $executionstateclasses = [
+            'executed' => 'primary',
+            'contract' => 'info',
+            'not_applicable' => 'secondary',
+        ];
+        $executionstatelabels = [
+            'executed' => get_string('executionstateexecuted', 'local_pluginvalidator'),
+            'contract' => get_string('executionstatecontract', 'local_pluginvalidator'),
+            'not_applicable' => get_string('executionstatenotapplicable', 'local_pluginvalidator'),
+        ];
 
         foreach ($result['groups'] ?? [] as $group) {
             $status = $group['status'] ?? 'ok';
@@ -167,6 +180,9 @@ if ($result !== null) {
                 $checkstatus = $check['status'] ?? 'ok';
                 $check['statusclass'] = $statusclasses[$checkstatus] ?? 'secondary';
                 $check['statuslabel'] = $statuslabels[$checkstatus] ?? $checkstatus;
+                $executionstate = (string)($check['executionstate'] ?? 'executed');
+                $check['executionstateclass'] = $executionstateclasses[$executionstate] ?? 'secondary';
+                $check['executionstatelabel'] = $executionstatelabels[$executionstate] ?? $executionstate;
 
                 $file = (string)($check['file'] ?? '');
                 $line = (int)($check['line'] ?? 0);
@@ -216,6 +232,9 @@ $templatedata = [
     'resultok' => $resultsummary['ok'],
     'resultwarnings' => $resultsummary['warnings'],
     'resulterrors' => $resultsummary['errors'],
+    'resultexecuted' => $resultsummary['executed'],
+    'resultcontract' => $resultsummary['contract'],
+    'resultnotapplicable' => $resultsummary['notapplicable'],
     'resultgroups' => $resultgroups,
     'resultruntimeerror' => $resultruntimeerror,
     'resulterrormessage' => $resulterrormessage,
