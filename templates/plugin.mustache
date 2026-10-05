@@ -22,7 +22,7 @@
     }
 }}
 <div class="local-pluginvalidator">
-    <div class="mb-3">
+    <div class="lpv-back">
         <a href="{{{backurl}}}">&larr; {{#str}}back, local_pluginvalidator{{/str}}</a>
     </div>
 
@@ -30,217 +30,274 @@
         <div class="alert alert-{{noticeclass}}">{{notice}}</div>
     {{/hasnotice}}
 
-    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
-        <div>
-            <h2 class="mb-1">{{displayname}}</h2>
-            <div><code>{{component}}</code></div>
+    <div class="lpv-plugin-header">
+        <div class="lpv-plugin-heading">
+            <h2>{{displayname}}</h2>
+            <code class="lpv-component">{{component}}</code>
         </div>
-        <div class="text-lg-end text-muted small">
+        <div class="lpv-plugin-meta">
             {{#release}}
-                <div>{{#str}}release, local_pluginvalidator{{/str}}: {{release}}</div>{{/release}}
+                <div>
+                    <span>{{#str}}release, local_pluginvalidator{{/str}}</span>
+                    <strong>{{release}}</strong>
+                </div>
+            {{/release}}
             {{#versiondisk}}
-                <div>{{#str}}version, local_pluginvalidator{{/str}}: {{versiondisk}}</div>{{/versiondisk}}
+                <div>
+                    <span>{{#str}}version, local_pluginvalidator{{/str}}</span>
+                    <strong>{{versiondisk}}</strong>
+                </div>
+            {{/versiondisk}}
         </div>
     </div>
 
     {{^hasresult}}
-        <h3 class="h4 mb-3">{{#str}}validations, local_pluginvalidator{{/str}}</h3>
+        <div class="lpv-section-heading">
+            <h3>{{#str}}validations, local_pluginvalidator{{/str}}</h3>
+        </div>
 
-        {{#engines}}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-                        <div class="flex-grow-1">
-                            <h4 class="h5 mb-1">{{name}}</h4>
-                            <p class="text-muted mb-2">{{description}}</p>
+        <div class="lpv-engine-list">
+            {{#engines}}
+                <div class="card lpv-engine-card">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                            <div class="flex-grow-1">
+                                <h4 class="h5 mb-1">{{name}}</h4>
+                                <p class="text-muted mb-2">{{description}}</p>
 
-                            {{#available}}
-                                <div class="small">
-                                    <span class="text-success">{{#str}}
-                                        engineavailable, local_pluginvalidator{{/str}}</span>
-                                    {{#version}}<span class="text-muted ms-2">{{version}} {{source}}</span>{{/version}}
-                                </div>
-                            {{/available}}
+                                {{#available}}
+                                    <div class="small">
+                                        <span class="text-success">
+                                            {{#str}}engineavailable, local_pluginvalidator{{/str}}
+                                        </span>
+                                        {{#version}}
+                                            <span class="text-muted ms-2">{{version}} {{source}}</span>
+                                        {{/version}}
+                                    </div>
+                                {{/available}}
 
-                            {{^available}}
-                                <div class="small text-warning">
-                                    {{#str}}enginemissing, local_pluginvalidator{{/str}}
-                                </div>
-                            {{/available}}
-                        </div>
+                                {{^available}}
+                                    <div class="small text-warning">
+                                        {{#str}}enginemissing, local_pluginvalidator{{/str}}
+                                    </div>
+                                {{/available}}
+                            </div>
 
-                        <div class="d-flex flex-wrap gap-2">
-                            {{#updatable}}
-                                <form method="get" action="{{{actionurl}}}" class="mb-0">
-                                    <input type="hidden" name="component" value="{{component}}">
-                                    <input type="hidden" name="engine" value="{{id}}">
-                                    <input type="hidden" name="action" value="installengine">
-                                    <input type="hidden" name="sesskey" value="{{sesskey}}">
-                                    <button type="submit" class="btn btn-outline-secondary">
-                                        {{#available}}{{#str}}updateengine, local_pluginvalidator{{/str}}{{/available}}
-                                        {{^available}}{{#str}}installengine, local_pluginvalidator{{/str}}{{/available}}
-                                    </button>
-                                </form>
-                            {{/updatable}}
+                            <div class="d-flex flex-wrap gap-2">
+                                {{#updatable}}
+                                    <form method="get" action="{{{actionurl}}}" class="mb-0">
+                                        <input type="hidden" name="component" value="{{component}}">
+                                        <input type="hidden" name="engine" value="{{id}}">
+                                        <input type="hidden" name="action" value="installengine">
+                                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                        <button type="submit" class="btn btn-outline-secondary">
+                                            {{#available}}
+                                                {{#str}}updateengine, local_pluginvalidator{{/str}}
+                                            {{/available}}
+                                            {{^available}}
+                                                {{#str}}installengine, local_pluginvalidator{{/str}}
+                                            {{/available}}
+                                        </button>
+                                    </form>
+                                {{/updatable}}
 
-                            {{#available}}
-                                <form method="get" action="{{{actionurl}}}" class="mb-0">
-                                    <input type="hidden" name="component" value="{{component}}">
-                                    <input type="hidden" name="engine" value="{{id}}">
-                                    <input type="hidden" name="action" value="validate">
-                                    <input type="hidden" name="sesskey" value="{{sesskey}}">
-                                    <button type="submit" class="btn btn-primary">
+                                {{#available}}
+                                    <form method="get" action="{{{actionurl}}}" class="mb-0">
+                                        <input type="hidden" name="component" value="{{component}}">
+                                        <input type="hidden" name="engine" value="{{id}}">
+                                        <input type="hidden" name="action" value="validate">
+                                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                        <button type="submit" class="btn btn-primary">
+                                            {{#str}}runvalidation, local_pluginvalidator{{/str}}
+                                        </button>
+                                    </form>
+                                {{/available}}
+
+                                {{^available}}
+                                    <button class="btn btn-primary" disabled>
                                         {{#str}}runvalidation, local_pluginvalidator{{/str}}
                                     </button>
-                                </form>
-                            {{/available}}
-
-                            {{^available}}
-                                <button class="btn btn-primary" disabled>
-                                    {{#str}}runvalidation, local_pluginvalidator{{/str}}
-                                </button>
-                            {{/available}}
+                                {{/available}}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        {{/engines}}
+            {{/engines}}
+        </div>
     {{/hasresult}}
 
     {{#hasresult}}
-        <div class="card mb-4">
-            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="lpv-result">
+            <div class="lpv-result-head {{#resultsuccess}}lpv-result-head--success{{/resultsuccess}}{{^resultsuccess}}lpv-result-head--error{{/resultsuccess}}">
                 <div>
-                    <strong>{{#str}}result, local_pluginvalidator{{/str}}</strong>
+                    <div class="lpv-result-kicker">{{#str}}result, local_pluginvalidator{{/str}}</div>
+                    <div class="lpv-result-title">
+                        {{#resultsuccess}}
+                            {{#str}}passed, local_pluginvalidator{{/str}}
+                        {{/resultsuccess}}
+                        {{^resultsuccess}}
+                            {{#str}}failed, local_pluginvalidator{{/str}}
+                        {{/resultsuccess}}
+                    </div>
                     {{#resultenginename}}
-                        <span class="text-muted ms-2">{{resultenginename}}</span>
+                        <div class="lpv-result-engine">{{resultenginename}}</div>
                     {{/resultenginename}}
                 </div>
-                {{#resultsuccess}}
-                    <span class="badge bg-success">{{#str}}passed, local_pluginvalidator{{/str}}</span>
-                {{/resultsuccess}}
-                {{^resultsuccess}}
-                    <span class="badge bg-danger">{{#str}}failed, local_pluginvalidator{{/str}}</span>
-                {{/resultsuccess}}
+                <div class="lpv-result-state">
+                    {{#resultsuccess}}
+                        <span class="lpv-result-state-badge lpv-result-state-badge--success">
+                            {{#str}}passed, local_pluginvalidator{{/str}}
+                        </span>
+                    {{/resultsuccess}}
+                    {{^resultsuccess}}
+                        <span class="lpv-result-state-badge lpv-result-state-badge--error">
+                            {{#str}}failed, local_pluginvalidator{{/str}}
+                        </span>
+                    {{/resultsuccess}}
+                </div>
             </div>
 
             {{#resultstructured}}
-                <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2">
-                        <span class="badge bg-success">
-                            {{resultok}} {{#str}}summaryok, local_pluginvalidator{{/str}}
-                        </span>
-                        <span class="badge bg-warning text-dark">
-                            {{resultwarnings}} {{#str}}summarywarnings, local_pluginvalidator{{/str}}
-                        </span>
-                        <span class="badge bg-danger">
-                            {{resulterrors}} {{#str}}summaryerrors, local_pluginvalidator{{/str}}
-                        </span>
-                        {{#resultexecuted}}
-                            <span class="badge bg-info text-dark">
-                                {{resultexecuted}} {{#str}}executionstateexecuted, local_pluginvalidator{{/str}}
-                            </span>
-                        {{/resultexecuted}}
-                        {{#resultcontract}}
-                            <span class="badge bg-secondary">
-                                {{resultcontract}} {{#str}}executionstatecontract, local_pluginvalidator{{/str}}
-                            </span>
-                        {{/resultcontract}}
-                        {{#resultnotapplicable}}
-                            <span class="badge bg-light text-dark border">
-                                {{resultnotapplicable}} {{#str}}executionstatenotapplicable, local_pluginvalidator{{/str}}
-                            </span>
-                        {{/resultnotapplicable}}
+                <div class="lpv-summary">
+                    <div class="lpv-summary-card lpv-summary-card--ok">
+                        <div class="lpv-summary-value">{{resultok}}</div>
+                        <div class="lpv-summary-label">{{#str}}summaryok, local_pluginvalidator{{/str}}</div>
                     </div>
+                    <div class="lpv-summary-card lpv-summary-card--warning">
+                        <div class="lpv-summary-value">{{resultwarnings}}</div>
+                        <div class="lpv-summary-label">
+                            {{#str}}summarywarnings, local_pluginvalidator{{/str}}
+                        </div>
+                    </div>
+                    <div class="lpv-summary-card lpv-summary-card--error">
+                        <div class="lpv-summary-value">{{resulterrors}}</div>
+                        <div class="lpv-summary-label">
+                            {{#str}}summaryerrors, local_pluginvalidator{{/str}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lpv-execution-summary">
+                    {{#resultexecuted}}
+                        <span class="lpv-execution-pill lpv-execution-pill--executed">
+                            <strong>{{resultexecuted}}</strong>
+                            {{#str}}executionstateexecuted, local_pluginvalidator{{/str}}
+                        </span>
+                    {{/resultexecuted}}
+                    {{#resultcontract}}
+                        <span class="lpv-execution-pill lpv-execution-pill--contract">
+                            <strong>{{resultcontract}}</strong>
+                            {{#str}}executionstatecontract, local_pluginvalidator{{/str}}
+                        </span>
+                    {{/resultcontract}}
+                    {{#resultnotapplicable}}
+                        <span class="lpv-execution-pill lpv-execution-pill--na">
+                            <strong>{{resultnotapplicable}}</strong>
+                            {{#str}}executionstatenotapplicable, local_pluginvalidator{{/str}}
+                        </span>
+                    {{/resultnotapplicable}}
                 </div>
             {{/resultstructured}}
 
             {{#resulttext}}
                 {{^resultruntimeerror}}
-                    <div class="card-body">
-                        <pre class="bg-light border rounded p-3 mb-0 overflow-auto"><code>{{resultoutput}}</code></pre>
+                    <div class="lpv-text-result">
+                        <pre><code>{{resultoutput}}</code></pre>
                     </div>
                 {{/resultruntimeerror}}
             {{/resulttext}}
         </div>
 
         {{#resultruntimeerror}}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger lpv-runtime-error">
                 <strong>{{#str}}validationruntimeerror, local_pluginvalidator{{/str}}:</strong>
                 {{resulterrormessage}}
             </div>
         {{/resultruntimeerror}}
 
         {{#resultstructured}}
-            {{#resultgroups}}
-                <div class="card mb-3 border-{{statusclass}}">
-                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <code class="fs-6">{{rule}}</code>
-                            <span class="badge bg-{{statusclass}}">{{statuslabel}}</span>
+            <div class="lpv-groups">
+                {{#resultgroups}}
+                    <section class="lpv-group lpv-group--{{statusclass}}">
+                        <div class="lpv-group-header">
+                            <div class="lpv-group-title">
+                                <code>{{rule}}</code>
+                                <span class="lpv-status lpv-status--{{statusclass}}">{{statuslabel}}</span>
+                            </div>
+                            <div class="lpv-group-summary">
+                                {{#summary.ok}}
+                                    <span class="lpv-mini-stat lpv-mini-stat--ok">
+                                        <strong>{{summary.ok}}</strong>
+                                        {{#str}}summaryok, local_pluginvalidator{{/str}}
+                                    </span>
+                                {{/summary.ok}}
+                                {{#summary.warnings}}
+                                    <span class="lpv-mini-stat lpv-mini-stat--warning">
+                                        <strong>{{summary.warnings}}</strong>
+                                        {{#str}}summarywarnings, local_pluginvalidator{{/str}}
+                                    </span>
+                                {{/summary.warnings}}
+                                {{#summary.errors}}
+                                    <span class="lpv-mini-stat lpv-mini-stat--error">
+                                        <strong>{{summary.errors}}</strong>
+                                        {{#str}}summaryerrors, local_pluginvalidator{{/str}}
+                                    </span>
+                                {{/summary.errors}}
+                            </div>
                         </div>
-                        <div class="d-flex flex-wrap gap-2 small">
-                            {{#summary.ok}}
-                                <span class="text-success">{{summary.ok}} {{#str}}
-                                    summaryok, local_pluginvalidator{{/str}}</span>
-                            {{/summary.ok}}
-                            {{#summary.warnings}}
-                                <span class="text-warning">{{summary.warnings}} {{#str}}
-                                    summarywarnings, local_pluginvalidator{{/str}}</span>
-                            {{/summary.warnings}}
-                            {{#summary.errors}}
-                                <span class="text-danger">{{summary.errors}} {{#str}}
-                                    summaryerrors, local_pluginvalidator{{/str}}</span>
-                            {{/summary.errors}}
-                        </div>
-                    </div>
 
-                    <div class="list-group list-group-flush">
-                        {{#checks}}
-                            <div class="list-group-item">
-                                <div class="d-flex flex-column flex-md-row align-items-md-start gap-2">
-                                    <div class="flex-shrink-0 d-flex flex-column gap-1">
-                                        <span class="badge bg-{{statusclass}}">{{statuslabel}}</span>
-                                        <span class="badge bg-{{executionstateclass}}">{{executionstatelabel}}</span>
+                        <div class="lpv-check-list">
+                            {{#checks}}
+                                <article class="lpv-check lpv-check--{{statusclass}}">
+                                    <div class="lpv-check-status">
+                                        <span class="lpv-status lpv-status--{{statusclass}}">{{statuslabel}}</span>
+                                        <span class="badge bg-{{executionstateclass}}">
+                                            {{executionstatelabel}}
+                                        </span>
                                     </div>
-                                    <div class="flex-grow-1">
-                                        <div>{{message}}</div>
+
+                                    <div class="lpv-check-content">
+                                        <div class="lpv-check-message">{{message}}</div>
 
                                         {{#explanation}}
-                                            <div class="mt-2">
-                                                <strong>{{#str}}whythishappened, local_pluginvalidator{{/str}}:</strong>
-                                                <div class="text-muted">{{explanation}}</div>
+                                            <div class="lpv-detail lpv-detail--explanation">
+                                                <div class="lpv-detail-label">
+                                                    {{#str}}whythishappened, local_pluginvalidator{{/str}}
+                                                </div>
+                                                <div class="lpv-detail-text">{{explanation}}</div>
                                             </div>
                                         {{/explanation}}
 
                                         {{#howToFix}}
-                                            <div class="mt-2">
-                                                <strong>{{#str}}howtofix, local_pluginvalidator{{/str}}:</strong>
-                                                <div class="text-muted">{{howToFix}}</div>
+                                            <div class="lpv-detail lpv-detail--fix">
+                                                <div class="lpv-detail-label">
+                                                    {{#str}}howtofix, local_pluginvalidator{{/str}}
+                                                </div>
+                                                <div class="lpv-detail-text">{{howToFix}}</div>
                                             </div>
                                         {{/howToFix}}
 
                                         {{#haslocation}}
-                                            <div class="small text-muted mt-1">
+                                            <div class="lpv-location">
                                                 <code>{{location}}</code>
                                                 {{#hastarget}}
-                                                    <span class="mx-1">&middot;</span>
+                                                    <span aria-hidden="true">&middot;</span>
                                                     <code>{{target}}</code>
                                                 {{/hastarget}}
                                             </div>
                                         {{/haslocation}}
                                         {{^haslocation}}
                                             {{#hastarget}}
-                                                <div class="small text-muted mt-1"><code>{{target}}</code></div>
+                                                <div class="lpv-location"><code>{{target}}</code></div>
                                             {{/hastarget}}
                                         {{/haslocation}}
                                     </div>
-                                </div>
-                            </div>
-                        {{/checks}}
-                    </div>
-                </div>
-            {{/resultgroups}}
+                                </article>
+                            {{/checks}}
+                        </div>
+                    </section>
+                {{/resultgroups}}
+            </div>
         {{/resultstructured}}
     {{/hasresult}}
 </div>
