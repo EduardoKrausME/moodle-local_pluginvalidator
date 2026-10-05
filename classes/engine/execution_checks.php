@@ -616,7 +616,10 @@ class execution_checks {
                 throw new coding_exception('filter() must return a string.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "{$classname}::filter() executed successfully.", is_file($file) ? 'filter.php' : 'classes/text_filter.php', $classname);
+                "{$classname}::filter() executed successfully.",
+                is_file($file) ? 'filter.php' : 'classes/text_filter.php',
+                $classname
+            );
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 'Filter runtime validation failed: ' . $e->getMessage(), is_file($file) ? 'filter.php' : 'classes/text_filter.php');
@@ -694,7 +697,8 @@ class execution_checks {
                         "{$updategrades}() executed for existing graded user {$userid}.", 'lib.php', $updategrades);
                 } else {
                     $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                        "{$updategrades}() is valid, but no existing graded user was found; mass grade synchronization was skipped.",
+                        "{$updategrades}() is valid, but no existing graded user was found; "
+                            . 'mass grade synchronization was skipped.',
                         'lib.php', $updategrades);
                 }
             }
@@ -728,7 +732,8 @@ class execution_checks {
         }
         if ($hasrules && !$hasclass && !function_exists($legacy)) {
             $this->add_check($groups, $rule, 'error', self::STATE_CONTRACT,
-                'FEATURE_COMPLETION_HAS_RULES is declared, but neither the modern custom_completion class nor legacy get_completion_state() exists.',
+                'FEATURE_COMPLETION_HAS_RULES is declared, but neither the modern custom_completion class '
+                    . 'nor legacy get_completion_state() exists.',
                 'lib.php');
             return;
         }
@@ -794,7 +799,8 @@ class execution_checks {
                 throw new coding_exception('Moodle renderer factory returned no renderer.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                'Custom renderer was instantiated successfully by Moodle.', is_file($file) ? 'renderer.php' : 'classes/output/renderer.php',
+                'Custom renderer was instantiated successfully by Moodle.',
+                is_file($file) ? 'renderer.php' : 'classes/output/renderer.php',
                 get_class($renderer));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
@@ -914,7 +920,10 @@ class execution_checks {
             }
             $qtype->menu_name();
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                'Question type instantiated through question_bank and menu_name() executed.', 'questiontype.php', get_class($qtype));
+                'Question type instantiated through question_bank and menu_name() executed.',
+                'questiontype.php',
+                get_class($qtype)
+            );
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 'Question type validation failed: ' . $e->getMessage(), 'questiontype.php');
@@ -977,7 +986,7 @@ class execution_checks {
         }
         if (is_array($callback)) {
             $reflection = new ReflectionMethod($callback[0], $callback[1]);
-        } else if (is_string($callback) && str_contains($callback, '::')) {
+        } elseif (is_string($callback) && str_contains($callback, '::')) {
             [$class, $method] = explode('::', $callback, 2);
             $reflection = new ReflectionMethod($class, $method);
         } else {
@@ -1060,7 +1069,7 @@ class execution_checks {
         if ($status === 'error') {
             $groups[$rule]['summary']['errors']++;
             $groups[$rule]['status'] = 'error';
-        } else if ($status === 'warning') {
+        } elseif ($status === 'warning') {
             $groups[$rule]['summary']['warnings']++;
             if ($groups[$rule]['status'] !== 'error') {
                 $groups[$rule]['status'] = 'warning';
@@ -1070,7 +1079,7 @@ class execution_checks {
         }
         if ($executionstate === self::STATE_EXECUTED) {
             $groups[$rule]['summary']['executed']++;
-        } else if ($executionstate === self::STATE_CONTRACT) {
+        } elseif ($executionstate === self::STATE_CONTRACT) {
             $groups[$rule]['summary']['contract']++;
         } else {
             $groups[$rule]['summary']['notapplicable']++;
