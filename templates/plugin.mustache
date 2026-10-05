@@ -70,16 +70,18 @@
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <form method="get" action="{{{actionurl}}}" class="mb-0">
-                                <input type="hidden" name="component" value="{{component}}">
-                                <input type="hidden" name="engine" value="{{id}}">
-                                <input type="hidden" name="action" value="installengine">
-                                <input type="hidden" name="sesskey" value="{{sesskey}}">
-                                <button type="submit" class="btn btn-outline-secondary">
-                                    {{#available}}{{#str}}updateengine, local_pluginvalidator{{/str}}{{/available}}
-                                    {{^available}}{{#str}}installengine, local_pluginvalidator{{/str}}{{/available}}
-                                </button>
-                            </form>
+                            {{#updatable}}
+                                <form method="get" action="{{{actionurl}}}" class="mb-0">
+                                    <input type="hidden" name="component" value="{{component}}">
+                                    <input type="hidden" name="engine" value="{{id}}">
+                                    <input type="hidden" name="action" value="installengine">
+                                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                    <button type="submit" class="btn btn-outline-secondary">
+                                        {{#available}}{{#str}}updateengine, local_pluginvalidator{{/str}}{{/available}}
+                                        {{^available}}{{#str}}installengine, local_pluginvalidator{{/str}}{{/available}}
+                                    </button>
+                                </form>
+                            {{/updatable}}
 
                             {{#available}}
                                 <form method="get" action="{{{actionurl}}}" class="mb-0">
