@@ -213,7 +213,7 @@ class execution_engine implements validation_engine_interface {
             if ($backupcontroller !== null) {
                 try {
                     $backupcontroller->destroy();
-                } catch (Throwable $ignored) {
+                } catch (Throwable $ignored) { // phpcs:disable Generic.CodeAnalysis.EmptyStatement.DetectedCatch
                     // The validation result above is more useful than a cleanup-only failure.
                 }
             }
