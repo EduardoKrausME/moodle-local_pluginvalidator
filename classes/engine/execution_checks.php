@@ -390,7 +390,11 @@ class execution_checks {
         $classes = $this->discover_component_classes($plugin);
         $rule = 'execution:adhoc_tasks';
         $found = false;
+        $taskprefix = (string)$plugin['component'] . '\\task\\';
         foreach ($classes as $classname) {
+            if (!str_starts_with($classname, $taskprefix)) {
+                continue;
+            }
             try {
                 if (!class_exists($classname) || !is_subclass_of($classname, \core\task\adhoc_task::class)) {
                     continue;
@@ -751,8 +755,8 @@ class execution_checks {
                 if (!is_subclass_of($classname, \core_completion\activity_custom_completion::class)) {
                     throw new coding_exception("{$classname} does not extend core_completion\\activity_custom_completion.");
                 }
-                $rules = $classname::get_defined_custom_rules();
-                if (!is_array($rules)) {
+                $definedrules = $classname::get_defined_custom_rules();
+                if (!is_array($definedrules)) {
                     throw new coding_exception('get_defined_custom_rules() must return an array.');
                 }
                 $custom = new $classname($module['cminfo'], (int)$USER->id);
@@ -761,11 +765,13 @@ class execution_checks {
                 if (!is_array($descriptions) || !is_array($sortorder)) {
                     throw new coding_exception('Completion descriptions and sort order must be arrays.');
                 }
-                foreach ($rules as $completionrule) {
+                $availablerules = $custom->get_available_custom_rules();
+                foreach ($availablerules as $completionrule) {
                     $custom->get_state((string)$completionrule);
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$classname} loaded; " . count($rules) . ' custom rule(s) were resolved and evaluated.',
+                    "{$classname} loaded; " . count($definedrules) . ' custom rule(s) were resolved and '
+                        . count($availablerules) . ' active rule(s) were evaluated.',
                     'classes/completion/custom_completion.php', $classname);
             }
             if (function_exists($legacy)) {
