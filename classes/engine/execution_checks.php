@@ -309,7 +309,7 @@ class execution_checks {
                 'backup/moodle2', 'cmid=' . (int)$module['cm']->id);
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Backup + restore round-trip failed: ' . $e->getMessage(), 'backup/moodle2',
+                'Backup + restore round-trip failed: ' . $this->format_exception($e), 'backup/moodle2',
                 'cmid=' . (int)$module['cm']->id);
         } finally {
             if ($restorecontroller) {
@@ -928,6 +928,33 @@ class execution_checks {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 'Question type validation failed: ' . $e->getMessage(), 'questiontype.php');
         }
+    }
+
+    /**
+     * Formats runtime exceptions while preserving Moodle-specific diagnostic values.
+     *
+     * @param Throwable $e Exception to format.
+     * @return string
+     */
+    private function format_exception(Throwable $e): string {
+        $parts = [$e->getMessage()];
+
+        if (property_exists($e, 'a') && $e->a !== null && $e->a !== '') {
+            $detail = is_scalar($e->a)
+                ? (string)$e->a
+                : json_encode($e->a, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($detail !== false && $detail !== '') {
+                $parts[] = 'detail=' . $detail;
+            }
+        }
+
+        if (property_exists($e, 'debuginfo') && !empty($e->debuginfo)) {
+            $parts[] = 'debug=' . (string)$e->debuginfo;
+        }
+
+        $parts[] = get_class($e) . ' @ ' . $e->getFile() . ':' . $e->getLine();
+
+        return implode(' | ', $parts);
     }
 
     /** Returns a realistic installed module context for activity checks. */
