@@ -197,10 +197,10 @@ class execution_engine implements validation_engine_interface {
                 (int)$record->id,
                 \backup::FORMAT_MOODLE,
                 \backup::INTERACTIVE_NO,
-                \backup::MODE_IMPORT,
+                \backup::MODE_GENERAL,
                 $USER->id
             );
-            $this->isolate_activity_backup($backupcontroller);
+            $this->configure_activity_backup($backupcontroller);
 
             $backupbasepath = $backupcontroller->get_plan()->get_basepath();
             $backupcontroller->execute_plan();
@@ -494,17 +494,17 @@ class execution_engine implements validation_engine_interface {
     }
 
     /**
-     * Excludes unrelated page-level plugin data from an activity backup smoke test.
+     * Keeps the activity backup focused without overriding Moodle's locked settings.
      *
-     * MODE_IMPORT forces blocks and filters on for non-interactive activity copies.
-     * That is correct for Moodle's duplicate/import workflow, but it makes a plugin
-     * validator attribute failures in an unrelated block or filter to the activity
-     * being validated.
+     * MODE_GENERAL is the normal backup mode and, unlike MODE_IMPORT for a non-interactive
+     * single-activity copy, does not force blocks and filters on. When those settings are
+     * editable we disable them so unrelated page-level plugins cannot make an activity
+     * validator fail. Locked administrator settings are deliberately left untouched.
      *
      * @param \backup_controller $controller Backup controller.
      * @return void
      */
-    private function isolate_activity_backup(\backup_controller $controller): void {
+    private function configure_activity_backup(\backup_controller $controller): void {
         $plan = $controller->get_plan();
 
         foreach (['blocks', 'filters'] as $settingname) {
@@ -513,9 +513,6 @@ class execution_engine implements validation_engine_interface {
             }
 
             $setting = $plan->get_setting($settingname);
-            if ($setting->get_status() !== \base_setting::NOT_LOCKED) {
-                $setting->set_status(\base_setting::NOT_LOCKED);
-            }
             if ($setting->get_status() === \base_setting::NOT_LOCKED) {
                 $setting->set_value(false);
             }
