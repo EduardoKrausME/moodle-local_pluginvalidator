@@ -87,20 +87,26 @@ class execution_checks {
             return;
         }
 
-        $prefix = (string)($plugin['name'] ?? '');
+        $prefixes = array_unique(array_filter([
+            (string)($plugin['name'] ?? ''),
+            (string)($plugin['component'] ?? ''),
+        ]));
         $module = $this->get_module_runtime($plugin);
-        $callbacks = [
-            $prefix . '_supports' => 'safe',
-            $prefix . '_get_coursemodule_info' => 'safe',
-            $prefix . '_get_file_areas' => 'safe',
-            $prefix . '_pluginfile' => 'contract',
-            $prefix . '_extend_navigation' => 'contract',
-            $prefix . '_extend_settings_navigation' => 'contract',
-            $prefix . '_add_instance' => 'contract',
-            $prefix . '_update_instance' => 'contract',
-            $prefix . '_delete_instance' => 'contract',
-            $prefix . '_reset_userdata' => 'contract',
-        ];
+        $callbacks = [];
+        foreach ($prefixes as $prefix) {
+            $callbacks += [
+                $prefix . '_supports' => 'safe',
+                $prefix . '_get_coursemodule_info' => 'safe',
+                $prefix . '_get_file_areas' => 'safe',
+                $prefix . '_pluginfile' => 'contract',
+                $prefix . '_extend_navigation' => 'contract',
+                $prefix . '_extend_settings_navigation' => 'contract',
+                $prefix . '_add_instance' => 'contract',
+                $prefix . '_update_instance' => 'contract',
+                $prefix . '_delete_instance' => 'contract',
+                $prefix . '_reset_userdata' => 'contract',
+            ];
+        }
 
         $found = false;
         foreach ($callbacks as $function => $mode) {
@@ -122,7 +128,7 @@ class execution_checks {
                     continue;
                 }
 
-                if ($function === $prefix . '_supports') {
+                if (str_ends_with($function, '_supports')) {
                     $features = array_filter([
                         defined('FEATURE_COMPLETION_HAS_RULES') ? FEATURE_COMPLETION_HAS_RULES : null,
                         defined('FEATURE_GRADE_HAS_GRADE') ? FEATURE_GRADE_HAS_GRADE : null,
@@ -144,14 +150,14 @@ class execution_checks {
                     continue;
                 }
 
-                if ($function === $prefix . '_get_coursemodule_info') {
+                if (str_ends_with($function, '_get_coursemodule_info')) {
                     $function($module['cm']);
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                         "{$function}() executed with course module {$module['cm']->id}.", 'lib.php', $function);
                     continue;
                 }
 
-                if ($function === $prefix . '_get_file_areas') {
+                if (str_ends_with($function, '_get_file_areas')) {
                     $areas = $function($module['course'], $module['cm'], $module['context']);
                     if (!is_array($areas)) {
                         throw new coding_exception('get_file_areas() must return an array.');
@@ -980,8 +986,8 @@ class execution_checks {
         } else {
             $reflection = new ReflectionFunction($callback);
         }
-        if (!$reflection->isPublic()) {
-            throw new coding_exception('Callback must be public.');
+        if ($reflection instanceof ReflectionMethod && !$reflection->isPublic()) {
+            throw new coding_exception('Callback method must be public.');
         }
         if ($reflection->getNumberOfParameters() < $minimumparameters) {
             throw new coding_exception("Callback must accept at least {$minimumparameters} parameter(s).");
