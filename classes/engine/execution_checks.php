@@ -284,8 +284,24 @@ class execution_checks {
             $backupid = $backupcontroller->get_backupid();
             $backupbasepath = $backupcontroller->get_plan()->get_basepath();
             $backupcontroller->execute_plan();
+            $results = $backupcontroller->get_results();
+            $backupfile = $results['backup_destination'] ?? null;
+            if (!$backupfile) {
+                throw new coding_exception('Backup did not produce a backup_destination file.');
+            }
+
             $backupcontroller->destroy();
             $backupcontroller = null;
+
+            // restore_controller expects an extracted Moodle backup in the temp directory.
+            // Depending on the backup execution path, execute_plan() may leave only the
+            // generated .mbz available, so mirror Moodle core tests and extract it first.
+            if (!file_exists($backupbasepath . '/moodle_backup.xml')) {
+                $backupfile->extract_to_pathname(
+                    get_file_packer('application/vnd.moodle.backup'),
+                    $backupbasepath
+                );
+            }
 
             $restorecontroller = new \restore_controller(
                 $backupid,
