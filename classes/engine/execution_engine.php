@@ -217,7 +217,7 @@ class execution_engine implements validation_engine_interface {
                 $groups,
                 $rule,
                 'error',
-                get_string('executionbackuperror', 'local_pluginvalidator', $e->getMessage()),
+                get_string('executionbackuperror', 'local_pluginvalidator', $this->format_exception($e)),
                 $file,
                 'cmid=' . (int)$record->id
             );
@@ -482,7 +482,7 @@ class execution_engine implements validation_engine_interface {
                 $groups,
                 $rule,
                 'error',
-                get_string('executionmodformerror', 'local_pluginvalidator', $e->getMessage()),
+                get_string('executionmodformerror', 'local_pluginvalidator', $this->format_exception($e)),
                 'mod_form.php'
             );
         } finally {
@@ -490,6 +490,37 @@ class execution_engine implements validation_engine_interface {
             $OUTPUT = $oldoutput;
             $PAGE = $oldpage;
         }
+    }
+
+    /**
+     * Formats runtime exceptions without discarding Moodle's structured details.
+     *
+     * Some Moodle exceptions intentionally keep the useful value in the public
+     * "a" property. For backup structure exceptions this is the exact element
+     * or attribute name that could not be resolved.
+     *
+     * @param Throwable $e Exception to format.
+     * @return string
+     */
+    private function format_exception(Throwable $e): string {
+        $parts = [$e->getMessage()];
+
+        if (property_exists($e, 'a') && $e->a !== null && $e->a !== '') {
+            $detail = is_scalar($e->a)
+                ? (string)$e->a
+                : json_encode($e->a, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($detail !== false && $detail !== '') {
+                $parts[] = 'detail=' . $detail;
+            }
+        }
+
+        if (property_exists($e, 'debuginfo') && !empty($e->debuginfo)) {
+            $parts[] = 'debug=' . (string)$e->debuginfo;
+        }
+
+        $parts[] = get_class($e) . ' @ ' . $e->getFile() . ':' . $e->getLine();
+
+        return implode(' | ', $parts);
     }
 
     /**
