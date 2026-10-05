@@ -160,9 +160,9 @@ if ($result !== null) {
             'error' => get_string('statuserror', 'local_pluginvalidator'),
         ];
         $executionstateclasses = [
-            'executed' => 'primary',
-            'contract' => 'info',
-            'not_applicable' => 'secondary',
+            'executed' => 'info text-dark',
+            'contract' => 'secondary',
+            'not_applicable' => 'light text-dark border',
         ];
         $executionstatelabels = [
             'executed' => get_string('executionstateexecuted', 'local_pluginvalidator'),
