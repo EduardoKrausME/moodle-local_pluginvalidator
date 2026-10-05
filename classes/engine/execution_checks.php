@@ -277,10 +277,10 @@ class execution_checks {
                 (int)$module['cm']->id,
                 \backup::FORMAT_MOODLE,
                 \backup::INTERACTIVE_NO,
-                \backup::MODE_IMPORT,
+                \backup::MODE_GENERAL,
                 $USER->id
             );
-            $this->isolate_activity_backup($backupcontroller);
+            $this->configure_activity_backup($backupcontroller);
             $backupid = $backupcontroller->get_backupid();
             $backupbasepath = $backupcontroller->get_plan()->get_basepath();
             $backupcontroller->execute_plan();
@@ -291,7 +291,7 @@ class execution_checks {
                 $backupid,
                 (int)$module['course']->id,
                 \backup::INTERACTIVE_NO,
-                \backup::MODE_IMPORT,
+                \backup::MODE_GENERAL,
                 $USER->id,
                 \backup::TARGET_CURRENT_ADDING
             );
@@ -941,12 +941,12 @@ class execution_checks {
     }
 
     /**
-     * Excludes unrelated page-level plugin data from an activity backup round-trip.
+     * Keeps the activity backup focused without overriding Moodle's locked settings.
      *
      * @param \backup_controller $controller Backup controller.
      * @return void
      */
-    private function isolate_activity_backup(\backup_controller $controller): void {
+    private function configure_activity_backup(\backup_controller $controller): void {
         $plan = $controller->get_plan();
 
         foreach (['blocks', 'filters'] as $settingname) {
@@ -955,9 +955,6 @@ class execution_checks {
             }
 
             $setting = $plan->get_setting($settingname);
-            if ($setting->get_status() !== \base_setting::NOT_LOCKED) {
-                $setting->set_status(\base_setting::NOT_LOCKED);
-            }
             if ($setting->get_status() === \base_setting::NOT_LOCKED) {
                 $setting->set_value(false);
             }
