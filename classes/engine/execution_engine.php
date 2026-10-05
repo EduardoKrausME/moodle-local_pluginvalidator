@@ -114,12 +114,20 @@ class execution_engine implements validation_engine_interface {
             $this->validate_mod_form($plugin, $groups);
         }
 
+        $expandedgroups = (new execution_checks())->validate($plugin);
+        foreach ($expandedgroups as $rule => $group) {
+            $groups[$rule] = $group;
+        }
+
         if ($groups === []) {
             $this->add_check(
                 $groups,
                 'execution',
                 'ok',
-                get_string('executionnotapplicable', 'local_pluginvalidator')
+                get_string('executionnotapplicable', 'local_pluginvalidator'),
+                '',
+                '',
+                execution_checks::STATE_NOT_APPLICABLE
             );
         }
 
@@ -142,9 +150,11 @@ class execution_engine implements validation_engine_interface {
             $this->add_check(
                 $groups,
                 $rule,
-                'warning',
+                'ok',
                 get_string('executionbackupunsupported', 'local_pluginvalidator'),
-                $file
+                $file,
+                '',
+                execution_checks::STATE_CONTRACT
             );
             return;
         }
@@ -169,9 +179,11 @@ class execution_engine implements validation_engine_interface {
             $this->add_check(
                 $groups,
                 $rule,
-                'warning',
+                'ok',
                 get_string('executionbackupnoinstance', 'local_pluginvalidator'),
-                $file
+                $file,
+                '',
+                execution_checks::STATE_CONTRACT
             );
             return;
         }
@@ -336,10 +348,11 @@ class execution_engine implements validation_engine_interface {
                     $this->add_check(
                         $groups,
                         $rule,
-                        'warning',
+                        'ok',
                         get_string('executionservicecontractonly', 'local_pluginvalidator', $data),
                         'db/services.php',
-                        $info->classname . '::' . $info->methodname
+                        $info->classname . '::' . $info->methodname,
+                        execution_checks::STATE_CONTRACT
                     );
                 }
             } catch (Throwable $e) {
@@ -487,7 +500,8 @@ class execution_engine implements validation_engine_interface {
         string $status,
         string $message,
         string $file = '',
-        string $target = ''
+        string $target = '',
+        string $executionstate = execution_checks::STATE_EXECUTED
     ): void {
         if (!isset($groups[$rule])) {
             $groups[$rule] = [
@@ -498,6 +512,9 @@ class execution_engine implements validation_engine_interface {
                     'ok' => 0,
                     'warnings' => 0,
                     'errors' => 0,
+                    'executed' => 0,
+                    'contract' => 0,
+                    'notapplicable' => 0,
                 ],
                 'checks' => [],
             ];
@@ -516,8 +533,17 @@ class execution_engine implements validation_engine_interface {
             $groups[$rule]['summary']['ok']++;
         }
 
+        if ($executionstate === execution_checks::STATE_EXECUTED) {
+            $groups[$rule]['summary']['executed']++;
+        } else if ($executionstate === execution_checks::STATE_CONTRACT) {
+            $groups[$rule]['summary']['contract']++;
+        } else {
+            $groups[$rule]['summary']['notapplicable']++;
+        }
+
         $groups[$rule]['checks'][] = [
             'status' => $status,
+            'executionstate' => $executionstate,
             'rule' => $rule,
             'file' => $file,
             'line' => 0,
@@ -540,6 +566,9 @@ class execution_engine implements validation_engine_interface {
             'ok' => 0,
             'warnings' => 0,
             'errors' => 0,
+            'executed' => 0,
+            'contract' => 0,
+            'notapplicable' => 0,
         ];
 
         foreach ($groups as $group) {
@@ -547,6 +576,9 @@ class execution_engine implements validation_engine_interface {
             $summary['ok'] += $group['summary']['ok'];
             $summary['warnings'] += $group['summary']['warnings'];
             $summary['errors'] += $group['summary']['errors'];
+            $summary['executed'] += $group['summary']['executed'] ?? 0;
+            $summary['contract'] += $group['summary']['contract'] ?? 0;
+            $summary['notapplicable'] += $group['summary']['notapplicable'] ?? 0;
         }
 
         $status = 'ok';
