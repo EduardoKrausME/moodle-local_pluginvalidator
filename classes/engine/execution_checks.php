@@ -493,6 +493,8 @@ class execution_checks {
                 throw new coding_exception('admin_root is not available.');
             }
             $loader = static function(string $settingsfile): void {
+                global $CFG, $DB, $USER, $PAGE;
+
                 $ADMIN = new \admin_root(true);
                 $settings = null;
                 $hassiteconfig = true;
@@ -559,7 +561,6 @@ class execution_checks {
                 throw new coding_exception("{$classname} does not extend block_base.");
             }
             $block = new $classname();
-            $block->init();
             $formats = $block->applicable_formats();
             if (!is_array($formats)) {
                 throw new coding_exception('applicable_formats() must return an array.');
