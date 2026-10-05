@@ -280,6 +280,7 @@ class execution_checks {
                 \backup::MODE_IMPORT,
                 $USER->id
             );
+            $this->isolate_activity_backup($backupcontroller);
             $backupid = $backupcontroller->get_backupid();
             $backupbasepath = $backupcontroller->get_plan()->get_basepath();
             $backupcontroller->execute_plan();
@@ -927,6 +928,28 @@ class execution_checks {
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 'Question type validation failed: ' . $e->getMessage(), 'questiontype.php');
+        }
+    }
+
+    /**
+     * Excludes unrelated page-level plugin data from an activity backup round-trip.
+     *
+     * @param \backup_controller $controller Backup controller.
+     * @return void
+     */
+    private function isolate_activity_backup(\backup_controller $controller): void {
+        $plan = $controller->get_plan();
+
+        foreach (['blocks', 'filters'] as $settingname) {
+            if (!$plan->setting_exists($settingname)) {
+                continue;
+            }
+
+            $setting = $plan->get_setting($settingname);
+            if ($setting->get_status() !== \base_setting::NOT_LOCKED) {
+                $setting->set_status(\base_setting::NOT_LOCKED);
+            }
+            $setting->set_value(false);
         }
     }
 
