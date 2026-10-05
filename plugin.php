@@ -37,6 +37,8 @@ $component = required_param('component', PARAM_COMPONENT);
 $action = optional_param('action', '', PARAM_ALPHA);
 $engineid = optional_param('engine', '', PARAM_ALPHANUMEXT);
 
+$PAGE->set_context(context_system::instance());
+
 $repository = new plugin_repository();
 $plugin = $repository->get_extension($component);
 if ($plugin === null) {
