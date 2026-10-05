@@ -136,6 +136,21 @@
                         <span class="badge bg-danger">
                             {{resulterrors}} {{#str}}summaryerrors, local_pluginvalidator{{/str}}
                         </span>
+                        {{#resultexecuted}}
+                            <span class="badge bg-primary">
+                                {{resultexecuted}} {{#str}}executionstateexecuted, local_pluginvalidator{{/str}}
+                            </span>
+                        {{/resultexecuted}}
+                        {{#resultcontract}}
+                            <span class="badge bg-info text-dark">
+                                {{resultcontract}} {{#str}}executionstatecontract, local_pluginvalidator{{/str}}
+                            </span>
+                        {{/resultcontract}}
+                        {{#resultnotapplicable}}
+                            <span class="badge bg-secondary">
+                                {{resultnotapplicable}} {{#str}}executionstatenotapplicable, local_pluginvalidator{{/str}}
+                            </span>
+                        {{/resultnotapplicable}}
                     </div>
                 </div>
             {{/resultstructured}}
@@ -184,8 +199,9 @@
                         {{#checks}}
                             <div class="list-group-item">
                                 <div class="d-flex flex-column flex-md-row align-items-md-start gap-2">
-                                    <div class="flex-shrink-0">
+                                    <div class="flex-shrink-0 d-flex flex-column gap-1">
                                         <span class="badge bg-{{statusclass}}">{{statuslabel}}</span>
+                                        <span class="badge bg-{{executionstateclass}}">{{executionstatelabel}}</span>
                                     </div>
                                     <div class="flex-grow-1">
                                         <div>{{message}}</div>
