@@ -25,10 +25,12 @@ The runtime engine performs checks only when they apply to the selected plugin:
    the same `prepare_new_moduleinfo_data()` preparation used by Moodle's `modedit.php`, then populated with
    `set_data()`.
 
-External service business methods are intentionally not called with invented parameters. A validator must not create
-records, delete data, send messages or call third-party systems simply because an administrator clicked Validate.
-The runtime check therefore executes the service metadata/contract methods that Moodle itself uses before dispatch,
-while real backup execution and form construction are performed directly.
+External functions explicitly declared as `read` are also executed when all of their top-level parameters can be
+satisfied without inventing business data (no required parameter; declared defaults are used). Their real return value
+is then checked by Moodle's external API wrapper. Functions that require IDs or other real input, and functions that are
+not explicitly read-only, still receive full class/parameter/return-contract validation but are not invoked, because a
+validator must not create records, delete data, send messages or call third-party systems just to manufacture a runtime
+test.
 
 Navigation:
 
