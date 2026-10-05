@@ -200,6 +200,7 @@ class execution_engine implements validation_engine_interface {
                 \backup::MODE_IMPORT,
                 $USER->id
             );
+            $this->isolate_activity_backup($backupcontroller);
 
             $backupbasepath = $backupcontroller->get_plan()->get_basepath();
             $backupcontroller->execute_plan();
@@ -489,6 +490,33 @@ class execution_engine implements validation_engine_interface {
             $COURSE = $oldcourse;
             $OUTPUT = $oldoutput;
             $PAGE = $oldpage;
+        }
+    }
+
+    /**
+     * Excludes unrelated page-level plugin data from an activity backup smoke test.
+     *
+     * MODE_IMPORT forces blocks and filters on for non-interactive activity copies.
+     * That is correct for Moodle's duplicate/import workflow, but it makes a plugin
+     * validator attribute failures in an unrelated block or filter to the activity
+     * being validated.
+     *
+     * @param \backup_controller $controller Backup controller.
+     * @return void
+     */
+    private function isolate_activity_backup(\backup_controller $controller): void {
+        $plan = $controller->get_plan();
+
+        foreach (['blocks', 'filters'] as $settingname) {
+            if (!$plan->setting_exists($settingname)) {
+                continue;
+            }
+
+            $setting = $plan->get_setting($settingname);
+            if ($setting->get_status() !== \base_setting::NOT_LOCKED) {
+                $setting->set_status(\base_setting::NOT_LOCKED);
+            }
+            $setting->set_value(false);
         }
     }
 
