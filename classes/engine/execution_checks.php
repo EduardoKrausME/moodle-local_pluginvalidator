@@ -762,11 +762,20 @@ class execution_checks {
                 if (!is_array($descriptions) || !is_array($sortorder)) {
                     throw new coding_exception('Completion descriptions and sort order must be arrays.');
                 }
-                foreach ($rules as $completionrule) {
+
+                // get_state() must only be called for rules enabled in this activity instance.
+                // activity_custom_completion::validate_rule() intentionally rejects defined but disabled rules.
+                $availablerules = $custom->get_available_custom_rules();
+                foreach ($availablerules as $completionrule) {
+                    if (!in_array($completionrule, $rules, true)) {
+                        throw new coding_exception("Available completion rule '{$completionrule}' is not defined by the plugin.");
+                    }
                     $custom->get_state((string)$completionrule);
                 }
+
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$classname} loaded; " . count($rules) . ' custom rule(s) were resolved and evaluated.',
+                    "{$classname} loaded; " . count($rules) . ' custom rule(s) were resolved and '
+                        . count($availablerules) . ' enabled rule(s) were evaluated.',
                     'classes/completion/custom_completion.php', $classname);
             }
             if (function_exists($legacy)) {
