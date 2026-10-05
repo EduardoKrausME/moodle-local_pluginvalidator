@@ -13,24 +13,30 @@ Currently registered engines:
 - **Runtime execution** — a built-in validator that exercises installed plugin code inside Moodle instead of only
   inspecting source files.
 
-The runtime engine performs checks only when they apply to the selected plugin:
+The runtime engine now separates every result into three execution levels:
 
-1. If `backup/moodle2` exists on an activity module, it locates an installed instance and executes a real
-   `backup_controller` activity backup using `backup::MODE_IMPORT`. The temporary backup directory and controller
-   are cleaned after the test.
-2. If `db/services.php` exists, every declared external function is loaded through Moodle's own
-   `external_api::external_function_info()`. This validates the implementation class and method, parameter contract,
-   return contract, component registration and the record in `external_functions`.
-3. For activity modules, `mod_form.php` is loaded and the expected `mod_<name>_mod_form` class is instantiated using
-   the same `prepare_new_moduleinfo_data()` preparation used by Moodle's `modedit.php`, then populated with
-   `set_data()`.
+- **Executed** — the callback or Moodle API was actually invoked.
+- **Contract validated** — class, callback, inheritance and signature were validated, but execution was intentionally skipped because it could write data, call external systems or trigger large side effects.
+- **Not applicable** — the check does not apply or no realistic installed context exists.
 
-External functions explicitly declared as `read` are also executed when all of their top-level parameters can be
-satisfied without inventing business data (no required parameter; declared defaults are used). Their real return value
-is then checked by Moodle's external API wrapper. Functions that require IDs or other real input, and functions that are
-not explicitly read-only, still receive full class/parameter/return-contract validation but are not invoked, because a
-validator must not create records, delete data, send messages or call third-party systems just to manufacture a runtime
-test.
+Runtime coverage includes:
+
+1. Activity backup plus a real backup/restore round-trip when `backup/moodle2` exists. The restored course module is temporary and is removed in cleanup.
+2. External functions from `db/services.php`, including real execution of read-only calls that need no invented required parameters.
+3. Activity `mod_form.php` instantiation through Moodle's normal module preparation path.
+4. Standard `lib.php` callbacks such as `*_supports()`, `*_get_coursemodule_info()` and `*_get_file_areas()`; destructive callbacks and `pluginfile`/navigation callbacks receive contract validation only.
+5. A small File API create/read/delete round-trip in a declared file area when a real module context exists.
+6. Scheduled tasks from `db/tasks.php`: class loading, inheritance, `get_name()` and `execute()` signature. `execute()` is never called automatically.
+7. Adhoc tasks: discovery, inheritance, instantiation and custom-data serialization without executing the task.
+8. Event observers from `db/events.php` and hooks from `db/hooks.php`, validating event/hook classes and callback signatures without dispatching synthetic events.
+9. `settings.php` inclusion against an isolated administration tree.
+10. Privacy providers, including real `get_metadata()` execution for metadata providers.
+11. Blocks and filters: block initialization/applicable formats, installed block `get_content()` when a real instance exists, and real text-filter execution.
+12. Grade API for activity modules, including `*_grade_item_update()` and targeted `*_update_grades()` when an existing graded user makes the call safe.
+13. Completion API, covering `FEATURE_COMPLETION_HAS_RULES`, modern `classes/completion/custom_completion.php`, custom rule definitions/descriptions/sort order/state evaluation, and legacy `*_get_completion_state()`.
+14. Renderer instantiation, course-format smoke tests and lightweight authentication, enrolment, repository and question-type checks.
+
+Operations with obvious production blast radius are deliberately not automatic: scheduled/adhoc task `execute()`, synthetic event or hook dispatch, enrolment mutations, repository listings that may contact remote services and other write-heavy callbacks are reported as **Contract validated** instead of pretending they were executed.
 
 Navigation:
 
