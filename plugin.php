@@ -45,6 +45,12 @@ if ($plugin === null) {
     throw new moodle_exception('invalidplugin', 'local_pluginvalidator');
 }
 
+$PAGE->set_context($context);
+$PAGE->set_url(new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $component]));
+$PAGE->set_pagelayout('admin');
+$PAGE->set_title($plugin['displayname']);
+$PAGE->set_heading(get_string('pluginname', 'local_pluginvalidator'));
+
 $enginemanager = new engine_manager();
 $engines = $enginemanager->get_engines();
 
@@ -204,12 +210,6 @@ if ($result !== null) {
         }
     }
 }
-
-$PAGE->set_context($context);
-$PAGE->set_url(new moodle_url('/local/pluginvalidator/plugin.php', ['component' => $component]));
-$PAGE->set_pagelayout('admin');
-$PAGE->set_title($plugin['displayname']);
-$PAGE->set_heading(get_string('pluginname', 'local_pluginvalidator'));
 
 $templatedata = [
     'displayname' => $plugin['displayname'],
