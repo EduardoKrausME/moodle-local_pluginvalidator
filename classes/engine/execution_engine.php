@@ -516,7 +516,9 @@ class execution_engine implements validation_engine_interface {
             if ($setting->get_status() !== \base_setting::NOT_LOCKED) {
                 $setting->set_status(\base_setting::NOT_LOCKED);
             }
-            $setting->set_value(false);
+            if ($setting->get_status() === \base_setting::NOT_LOCKED) {
+                $setting->set_value(false);
+            }
         }
     }
 
