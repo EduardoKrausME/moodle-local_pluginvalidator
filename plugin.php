@@ -111,6 +111,7 @@ foreach ($engines as $engine) {
         'available' => $status['available'],
         'version' => $status['version'],
         'source' => $status['source'],
+        'updatable' => array_key_exists('updatable', $status) ? (bool)$status['updatable'] : true,
     ];
 }
 
