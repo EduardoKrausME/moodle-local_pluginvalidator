@@ -388,7 +388,7 @@ class execution_checks {
 
     /** Discovers adhoc tasks and validates custom data serialization without executing them. */
     private function validate_adhoc_tasks(array $plugin, array &$groups): void {
-        $classes = $this->discover_component_classes($plugin);
+        $classes = $this->discover_component_classes($plugin, 'task');
         $rule = 'execution:adhoc_tasks';
         $found = false;
         foreach ($classes as $classname) {
@@ -1066,15 +1066,31 @@ class execution_checks {
         if (is_array($callback) && count($callback) === 2) {
             return (is_object($callback[0]) ? get_class($callback[0]) : (string)$callback[0]) . '::' . $callback[1];
         }
-        return get_debug_type($callback);
-    }
-
-    /** Discovers autoloadable plugin classes using Moodle's classes/ path convention. */
-    private function discover_component_classes(array $plugin): array {
-        $root = $this->root($plugin) . '/classes';
+        return get_debug_type($callback);    /**
+     * Discovers autoloadable plugin classes using Moodle's classes/ path convention.
+     *
+     * A subdirectory can be supplied when a validator only needs one class family.
+     * This prevents unrelated classes from being autoloaded while looking for adhoc
+     * tasks. Theme renderer overrides are a common example because legacy core
+     * renderer parents are loaded by Moodle's renderer factory, not by PSR autoload.
+     *
+     * @param array $plugin Plugin information.
+     * @param string $subdirectory Optional classes/ subdirectory.
+     * @return array
+     */
+    private function discover_component_classes(array $plugin, string $subdirectory = ''): array {
+        $classesroot = $this->root($plugin) . '/classes';
+        $subdirectory = trim(str_replace('\\', '/', $subdirectory), '/');
+        $root = $subdirectory === '' ? $classesroot : $classesroot . '/' . $subdirectory;
         if (!is_dir($root)) {
             return [];
         }
+
+        $namespace = (string)$plugin['component'];
+        if ($subdirectory !== '') {
+            $namespace .= '\\' . str_replace('/', '\\', $subdirectory);
+        }
+
         $classes = [];
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
@@ -1085,9 +1101,12 @@ class execution_checks {
             }
             $relative = substr($item->getPathname(), strlen($root) + 1);
             $relative = substr($relative, 0, -4);
-            $classes[] = (string)$plugin['component'] . '\\' . str_replace(DIRECTORY_SEPARATOR, '\\', $relative);
+            $classes[] = $namespace . '\\' . str_replace(DIRECTORY_SEPARATOR, '\\', $relative);
         }
         return $classes;
+    }
+
+
     }
 
     /** Converts an autoload class name back to a relative plugin file. */
