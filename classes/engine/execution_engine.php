@@ -405,7 +405,7 @@ class execution_engine implements validation_engine_interface {
      * @param array $groups Result groups.
      */
     private function validate_mod_form(array $plugin, array &$groups): void {
-        global $CFG, $COURSE, $DB;
+        global $CFG, $COURSE, $DB, $PAGE;
 
         $rule = 'execution:mod_form';
         $formfile = rtrim((string)$plugin['rootdir'], DIRECTORY_SEPARATOR) . '/mod_form.php';
@@ -437,9 +437,13 @@ class execution_engine implements validation_engine_interface {
         }
 
         $oldcourse = $COURSE;
+        $oldpage = $PAGE;
 
         try {
             $COURSE = $course;
+            $PAGE = new \moodle_page();
+            $PAGE->set_context(\context_course::instance((int)$course->id));
+            $PAGE->set_course($course);
             [, , $section, $cm, $data] = prepare_new_moduleinfo_data(
                 $course,
                 (string)$plugin['name'],
@@ -481,6 +485,7 @@ class execution_engine implements validation_engine_interface {
             );
         } finally {
             $COURSE = $oldcourse;
+            $PAGE = $oldpage;
         }
     }
 
