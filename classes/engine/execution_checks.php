@@ -235,6 +235,7 @@ class execution_checks {
                     $storedfile->delete();
                 } catch (Throwable $ignored) {
                     // Cleanup failure must not hide the primary validation result.
+                    unset($ignored);
                 }
             }
         }
@@ -301,7 +302,7 @@ class execution_checks {
             $backupcontroller->destroy();
             $backupcontroller = null;
 
-            // restore_controller expects an extracted Moodle backup in the temp directory.
+            // Restore controller expects an extracted Moodle backup in the temp directory.
             // Depending on the backup execution path, execute_plan() may leave only the
             // generated .mbz available, so mirror Moodle core tests and extract it first.
             if (!file_exists($backupbasepath . '/moodle_backup.xml')) {
@@ -345,6 +346,7 @@ class execution_checks {
                     $restorecontroller->destroy();
                 } catch (Throwable $ignored) {
                     // Continue cleanup.
+                    unset($ignored);
                 }
             }
             if ($newcmid) {
@@ -356,6 +358,7 @@ class execution_checks {
                     }
                 } catch (Throwable $ignored) {
                     // The failed cleanup should not replace the actual validation result.
+                    unset($ignored);
                 }
             }
             if ($backupcontroller) {
@@ -363,6 +366,7 @@ class execution_checks {
                     $backupcontroller->destroy();
                 } catch (Throwable $ignored) {
                     // Continue cleanup.
+                    unset($ignored);
                 }
             }
             if ($backupbasepath && is_dir($backupbasepath)) {
@@ -371,7 +375,11 @@ class execution_checks {
         }
     }
 
-    /** Validates scheduled task declarations without calling execute(). */
+    /**
+
+     * Validates scheduled task declarations without calling execute().
+
+     */
     private function validate_scheduled_tasks(array $plugin, array &$groups): void {
         $file = $this->root($plugin) . '/db/tasks.php';
         if (!is_file($file)) {
@@ -410,7 +418,11 @@ class execution_checks {
         }
     }
 
-    /** Discovers adhoc tasks and validates custom data serialization without executing them. */
+    /**
+
+     * Discovers adhoc tasks and validates custom data serialization without executing them.
+
+     */
     private function validate_adhoc_tasks(array $plugin, array &$groups): void {
         $classes = $this->discover_component_classes($plugin, 'task');
         $rule = 'execution:adhoc_tasks';
@@ -446,7 +458,11 @@ class execution_checks {
         }
     }
 
-    /** Validates db/events.php observers and callback signatures. */
+    /**
+
+     * Validates db/events.php observers and callback signatures.
+
+     */
     private function validate_event_observers(array $plugin, array &$groups): void {
         $file = $this->root($plugin) . '/db/events.php';
         if (!is_file($file)) {
@@ -479,7 +495,11 @@ class execution_checks {
         }
     }
 
-    /** Validates hook registrations and hook callback signatures. */
+    /**
+
+     * Validates hook registrations and hook callback signatures.
+
+     */
     private function validate_hooks(array $plugin, array &$groups): void {
         $file = $this->root($plugin) . '/db/hooks.php';
         if (!is_file($file)) {
@@ -508,7 +528,11 @@ class execution_checks {
         }
     }
 
-    /** Includes settings.php with a fresh administration tree. */
+    /**
+
+     * Includes settings.php with a fresh administration tree.
+
+     */
     private function validate_admin_settings(array $plugin, array &$groups): void {
         global $CFG;
         $file = $this->root($plugin) . '/settings.php';
@@ -530,7 +554,11 @@ class execution_checks {
         }
     }
 
-    /** Executes privacy metadata providers when safe and validates null providers. */
+    /**
+
+     * Executes privacy metadata providers when safe and validates null providers.
+
+     */
     private function validate_privacy(array $plugin, array &$groups): void {
         $file = $this->root($plugin) . '/classes/privacy/provider.php';
         if (!is_file($file)) {
@@ -565,7 +593,11 @@ class execution_checks {
         }
     }
 
-    /** Instantiates blocks and get_content() when an instance exists. */
+    /**
+
+     * Instantiates blocks and get_content() when an instance exists.
+
+     */
     private function validate_block(array $plugin, array &$groups): void {
         global $CFG, $DB, $PAGE;
         if (($plugin['type'] ?? '') !== 'block') {
@@ -610,7 +642,11 @@ class execution_checks {
         }
     }
 
-    /** Instantiates text filters and filters a short HTML fragment. */
+    /**
+
+     * Instantiates text filters and filters a short HTML fragment.
+
+     */
     private function validate_filter(array $plugin, array &$groups): void {
         global $CFG;
         if (($plugin['type'] ?? '') !== 'filter') {
@@ -651,7 +687,11 @@ class execution_checks {
         }
     }
 
-    /** Validates grade support and executes idempotent grade synchronization when possible. */
+    /**
+
+     * Validates grade support and executes idempotent grade synchronization when possible.
+
+     */
     private function validate_grade(array $plugin, array &$groups): void {
         global $CFG, $DB;
         if (($plugin['type'] ?? '') !== 'mod') {
@@ -733,7 +773,11 @@ class execution_checks {
         }
     }
 
-    /** Validates legacy and modern activity completion APIs. */
+    /**
+
+     * Validates legacy and modern activity completion APIs.
+
+     */
     private function validate_completion(array $plugin, array &$groups): void {
         global $USER;
         if (($plugin['type'] ?? '') !== 'mod') {
@@ -787,8 +831,8 @@ class execution_checks {
                     throw new coding_exception('Completion descriptions and sort order must be arrays.');
                 }
 
-                // get_state() must only be called for rules enabled in this activity instance.
-                // activity_custom_completion::validate_rule() intentionally rejects defined but disabled rules.
+                // Call get_state() only for rules enabled in this activity instance.
+                // Activity_custom_completion::validate_rule() intentionally rejects defined but disabled rules.
                 $availablerules = $custom->get_available_custom_rules();
                 foreach ($availablerules as $completionrule) {
                     if (!in_array($completionrule, $rules, true)) {
@@ -815,7 +859,11 @@ class execution_checks {
         }
     }
 
-    /** Instantiates a custom renderer through Moodle's renderer factory. */
+    /**
+
+     * Instantiates a custom renderer through Moodle's renderer factory.
+
+     */
     private function validate_renderer(array $plugin, array &$groups): void {
         global $PAGE;
         $file = $this->root($plugin) . '/renderer.php';
@@ -842,7 +890,11 @@ class execution_checks {
         }
     }
 
-    /** Loads a course using a third-party course format. */
+    /**
+
+     * Loads a course using a third-party course format.
+
+     */
     private function validate_course_format(array $plugin, array &$groups): void {
         global $CFG, $DB;
         if (($plugin['type'] ?? '') !== 'format') {
@@ -868,7 +920,11 @@ class execution_checks {
         }
     }
 
-    /** Authentication plugin smoke test. */
+    /**
+
+     * Authentication plugin smoke test.
+
+     */
     private function validate_auth(array $plugin, array &$groups): void {
         if (($plugin['type'] ?? '') !== 'auth') {
             return;
@@ -892,7 +948,11 @@ class execution_checks {
         }
     }
 
-    /** Enrol plugin class smoke test without adding or removing enrolments. */
+    /**
+
+     * Enrol plugin class smoke test without adding or removing enrolments.
+
+     */
     private function validate_enrol(array $plugin, array &$groups): void {
         global $CFG;
         if (($plugin['type'] ?? '') !== 'enrol') {
@@ -914,7 +974,11 @@ class execution_checks {
         }
     }
 
-    /** Repository plugin contract validation without remote listings. */
+    /**
+
+     * Repository plugin contract validation without remote listings.
+
+     */
     private function validate_repository(array $plugin, array &$groups): void {
         global $CFG;
         if (($plugin['type'] ?? '') !== 'repository') {
@@ -939,7 +1003,11 @@ class execution_checks {
         }
     }
 
-    /** Question type smoke test through question_bank. */
+    /**
+
+     * Question type smoke test through question_bank.
+
+     */
     private function validate_qtype(array $plugin, array &$groups): void {
         global $CFG;
         if (($plugin['type'] ?? '') !== 'qtype') {
@@ -1012,7 +1080,11 @@ class execution_checks {
         return implode(' | ', $parts);
     }
 
-    /** Returns a realistic installed module context for activity checks. */
+    /**
+
+     * Returns a realistic installed module context for activity checks.
+
+     */
     private function get_module_runtime(array $plugin): ?array {
         global $DB;
         if (($plugin['type'] ?? '') !== 'mod') {
@@ -1040,7 +1112,11 @@ class execution_checks {
         return compact('course', 'cm', 'instance', 'context', 'cminfo');
     }
 
-    /** Finds the module created by restore_controller. */
+    /**
+
+     * Finds the module created by restore_controller.
+
+     */
     private function find_restored_module_id(\restore_controller $restorecontroller, int $oldcontextid): int {
         foreach ($restorecontroller->get_plan()->get_tasks() as $task) {
             if (is_subclass_of($task, 'restore_activity_task') && (int)$task->get_old_contextid() === $oldcontextid) {
@@ -1050,7 +1126,11 @@ class execution_checks {
         return 0;
     }
 
-    /** Loads one legacy db/*.php array variable in isolated scope. */
+    /**
+
+     * Loads one legacy db/*.php array variable in isolated scope.
+
+     */
     private function load_array_file(string $file, string $variable): array {
         $loader = static function(string $path, string $name): array {
             ${$name} = [];
@@ -1061,14 +1141,18 @@ class execution_checks {
         return $loader($file, $variable);
     }
 
-    /** Validates a callback and its minimum accepted arguments. */
+    /**
+
+     * Validates a callback and its minimum accepted arguments.
+
+     */
     private function validate_callable($callback, int $minimumparameters): void {
         if (!is_callable($callback)) {
             throw new coding_exception("Callback '{$this->callback_name($callback)}' is not callable.");
         }
         if (is_array($callback)) {
             $reflection = new ReflectionMethod($callback[0], $callback[1]);
-        } elseif (is_string($callback) && str_contains($callback, '::')) {
+        } else if (is_string($callback) && str_contains($callback, '::')) {
             [$class, $method] = explode('::', $callback, 2);
             $reflection = new ReflectionMethod($class, $method);
         } else {
@@ -1082,7 +1166,11 @@ class execution_checks {
         }
     }
 
-    /** Returns a printable callback name. */
+    /**
+
+     * Returns a printable callback name.
+
+     */
     private function callback_name($callback): string {
         if (is_string($callback)) {
             return $callback;
@@ -1133,7 +1221,11 @@ class execution_checks {
         return $classes;
     }
 
-    /** Converts an autoload class name back to a relative plugin file. */
+    /**
+
+     * Converts an autoload class name back to a relative plugin file.
+
+     */
     private function class_file(array $plugin, string $classname): string {
         $prefix = (string)$plugin['component'] . '\\';
         if (!str_starts_with($classname, $prefix)) {
@@ -1142,12 +1234,20 @@ class execution_checks {
         return 'classes/' . str_replace('\\', '/', substr($classname, strlen($prefix))) . '.php';
     }
 
-    /** Returns normalized plugin root. */
+    /**
+
+     * Returns normalized plugin root.
+
+     */
     private function root(array $plugin): string {
         return rtrim((string)$plugin['rootdir'], DIRECTORY_SEPARATOR);
     }
 
-    /** Adds one check using the structured engine schema plus execution-state metadata. */
+    /**
+
+     * Adds one check using the structured engine schema plus execution-state metadata.
+
+     */
     private function add_check(
         array &$groups,
         string $rule,
@@ -1170,7 +1270,7 @@ class execution_checks {
         if ($status === 'error') {
             $groups[$rule]['summary']['errors']++;
             $groups[$rule]['status'] = 'error';
-        } elseif ($status === 'warning') {
+        } else if ($status === 'warning') {
             $groups[$rule]['summary']['warnings']++;
             if ($groups[$rule]['status'] !== 'error') {
                 $groups[$rule]['status'] = 'warning';
@@ -1180,7 +1280,7 @@ class execution_checks {
         }
         if ($executionstate === self::STATE_EXECUTED) {
             $groups[$rule]['summary']['executed']++;
-        } elseif ($executionstate === self::STATE_CONTRACT) {
+        } else if ($executionstate === self::STATE_CONTRACT) {
             $groups[$rule]['summary']['contract']++;
         } else {
             $groups[$rule]['summary']['notapplicable']++;
