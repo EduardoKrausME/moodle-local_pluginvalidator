@@ -508,21 +508,27 @@ class execution_checks {
                 $componentdir = $eventcomponent !== ''
                     ? \core_component::get_component_directory($eventcomponent)
                     : null;
-                $eventclassexists = $eventname !== '' && class_exists($eventname);
+                $eventautoloaded = $eventname !== '' && class_exists($eventname);
+                $eventclassexists = $eventautoloaded;
+                $eventclassfile = '';
+                $eventclassfileexists = false;
+                $eventfallbackloaded = false;
 
                 // Moodle's component class map may have been initialized before a newly deployed
                 // plugin class became available. For validation purposes, fall back to the standard
                 // component classes/ path before reporting that the event class does not exist.
-                if (!$eventclassexists && $eventname !== '' && $componentdir !== null) {
+                if (!$eventclassexists && $eventname !== '' && is_string($componentdir) && $componentdir !== '') {
                     $componentprefix = $eventcomponent . '\\';
                     if (str_starts_with($eventname, $componentprefix)) {
                         $relativeclass = substr($eventname, strlen($componentprefix));
                         $eventclassfile = rtrim($componentdir, DIRECTORY_SEPARATOR)
                             . '/classes/' . str_replace('\\', '/', $relativeclass) . '.php';
+                        $eventclassfileexists = is_file($eventclassfile);
 
-                        if (is_file($eventclassfile)) {
+                        if ($eventclassfileexists) {
                             require_once($eventclassfile);
                             $eventclassexists = class_exists($eventname, false);
+                            $eventfallbackloaded = $eventclassexists;
                         }
                     }
                 }
@@ -561,7 +567,29 @@ class execution_checks {
                     ],
                     [
                         'label' => 'Event component installed',
-                        'value' => $eventcomponent === '' ? 'Unknown' : ($componentdir !== null ? 'Yes' : 'No'),
+                        'value' => $eventcomponent === ''
+                            ? 'Unknown'
+                            : (is_string($componentdir) && $componentdir !== '' ? 'Yes' : 'No'),
+                    ],
+                    [
+                        'label' => 'Event component directory',
+                        'value' => is_string($componentdir) && $componentdir !== '' ? $componentdir : '(not resolved)',
+                    ],
+                    [
+                        'label' => 'Moodle autoloader resolved event',
+                        'value' => $eventautoloaded ? 'Yes' : 'No',
+                    ],
+                    [
+                        'label' => 'Expected event class file',
+                        'value' => $eventclassfile !== '' ? $eventclassfile : '(not resolved)',
+                    ],
+                    [
+                        'label' => 'Expected event class file exists',
+                        'value' => $eventclassfile !== '' ? ($eventclassfileexists ? 'Yes' : 'No') : 'Not checked',
+                    ],
+                    [
+                        'label' => 'Direct fallback loaded event',
+                        'value' => $eventclassfileexists ? ($eventfallbackloaded ? 'Yes' : 'No') : 'Not attempted',
                     ],
                     [
                         'label' => 'Event class exists',
