@@ -477,16 +477,10 @@ class execution_checks {
                 'value' => (string)$plugin['component'],
             ],
             [
-                'label' => 'Plugin root',
-                'value' => $this->root($plugin),
-            ],
-            [
                 'label' => 'Observer declaration',
                 'value' => 'db/events.php',
             ],
         ];
-        $explanation = '';
-        $howtofix = '';
 
         try {
             $observers = $this->load_array_file($file, 'observers');
@@ -522,10 +516,6 @@ class execution_checks {
                     [
                         'label' => 'Plugin being validated',
                         'value' => (string)$plugin['component'],
-                    ],
-                    [
-                        'label' => 'Plugin root',
-                        'value' => $this->root($plugin),
                     ],
                     [
                         'label' => 'Observer declaration',
@@ -565,37 +555,17 @@ class execution_checks {
                     ],
                 ];
 
-                $explanation = '';
-                $howtofix = '';
-
                 if (!empty($observer['includefile'])) {
                     require_once($this->root($plugin) . '/' . ltrim((string)$observer['includefile'], '/'));
                 }
 
                 if ($eventname === '') {
-                    $explanation = 'The observer declaration does not contain a usable eventname.';
-                    $howtofix = 'Set eventname in db/events.php to the fully qualified Moodle event class.';
                     throw new coding_exception(
                         "Observer #{$position} in db/events.php does not declare a valid eventname."
                     );
                 }
 
                 if (!$eventclassexists) {
-                    $explanation = $isexternal
-                        ? "The plugin {$plugin['component']} observes an event owned by {$eventcomponent}, "
-                            . 'but that event class is not available in this Moodle instance.'
-                        : 'The observer references an event class that Moodle cannot autoload.';
-
-                    if ($isexternal && $componentdir === null) {
-                        $howtofix = "Install the required component {$eventcomponent}, remove or update the observer, "
-                            . 'and declare the dependency in version.php when the plugin requires it.';
-                    } else if ($isexternal) {
-                        $howtofix = "The component {$eventcomponent} is installed, so check whether the event was "
-                            . 'renamed or removed and whether the installed plugin versions are compatible.';
-                    } else {
-                        $howtofix = 'Check the event namespace, classes/event file path and class name.';
-                    }
-
                     $message = "While validating {$plugin['component']}, observer #{$position} in db/events.php "
                         . "references event '{$eventname}', but the event class cannot be loaded.";
                     if ($isexternal) {
@@ -605,8 +575,6 @@ class execution_checks {
                 }
 
                 if (!$eventisvalid) {
-                    $explanation = 'The referenced class exists, but it is not a Moodle event class.';
-                    $howtofix = "Make {$eventname} extend core\\event\\base, or update eventname to the correct event.";
                     throw new coding_exception(
                         "Observer #{$position} event '{$eventname}' exists but does not extend core\\event\\base."
                     );
@@ -625,12 +593,6 @@ class execution_checks {
             }
         } catch (Throwable $e) {
             $diagnostics = $this->exception_diagnostics($e, $currentdetails);
-            if ($explanation !== '') {
-                $diagnostics['explanation'] = $explanation;
-            }
-            if ($howtofix !== '') {
-                $diagnostics['howToFix'] = $howtofix;
-            }
 
             $this->add_check(
                 $groups,
@@ -1211,13 +1173,16 @@ class execution_checks {
      * @return array
      */
     private function exception_diagnostics(Throwable $e, array $details = []): array {
+        global $CFG;
+
         $details[] = [
             'label' => 'Exception class',
             'value' => get_class($e),
         ];
+        $filename = str_replace($CFG->dirroot, "", $e->getFile());
         $details[] = [
             'label' => 'Exception location',
-            'value' => $e->getFile() . ':' . $e->getLine(),
+            'value' => $filename . ':' . $e->getLine(),
         ];
 
         if (property_exists($e, 'a') && $e->a !== null && $e->a !== '') {

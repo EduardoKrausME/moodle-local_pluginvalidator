@@ -474,10 +474,6 @@
     background: var(--lpv-surface-soft);
 }
 
-.local-pluginvalidator .lpv-detail--explanation {
-    border-left-color: #8ba6b0;
-}
-
 .local-pluginvalidator .lpv-detail--fix {
     border-left-color: var(--lpv-success);
     background: #f3faf6;
