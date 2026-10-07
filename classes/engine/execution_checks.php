@@ -509,6 +509,24 @@ class execution_checks {
                     ? \core_component::get_component_directory($eventcomponent)
                     : null;
                 $eventclassexists = $eventname !== '' && class_exists($eventname);
+
+                // Moodle's component class map may have been initialized before a newly deployed
+                // plugin class became available. For validation purposes, fall back to the standard
+                // component classes/ path before reporting that the event class does not exist.
+                if (!$eventclassexists && $eventname !== '' && $componentdir !== null) {
+                    $componentprefix = $eventcomponent . '\\';
+                    if (str_starts_with($eventname, $componentprefix)) {
+                        $relativeclass = substr($eventname, strlen($componentprefix));
+                        $eventclassfile = rtrim($componentdir, DIRECTORY_SEPARATOR)
+                            . '/classes/' . str_replace('\\', '/', $relativeclass) . '.php';
+
+                        if (is_file($eventclassfile)) {
+                            require_once($eventclassfile);
+                            $eventclassexists = class_exists($eventname, false);
+                        }
+                    }
+                }
+
                 $eventisvalid = $eventclassexists
                     && is_subclass_of($eventname, \core\event\base::class);
 
