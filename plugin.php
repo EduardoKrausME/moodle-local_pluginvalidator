@@ -102,6 +102,18 @@ if ($action !== '') {
                 'groups' => [],
                 'runtimeError' => [
                     'message' => $e->getMessage(),
+                    'class' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'detail' => property_exists($e, 'a') && $e->a !== null && $e->a !== ''
+                        ? (is_scalar($e->a)
+                            ? (string)$e->a
+                            : json_encode($e->a, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))
+                        : '',
+                    'debuginfo' => property_exists($e, 'debuginfo') && !empty($e->debuginfo)
+                        ? (string)$e->debuginfo
+                        : '',
                 ],
             ];
         }
@@ -135,6 +147,8 @@ $resultsummary = [
 $resultgroups = [];
 $resultruntimeerror = false;
 $resulterrormessage = '';
+$resulterrordetails = [];
+$resulterrortrace = '';
 $resultformat = '';
 $resultstructured = false;
 $resulttext = false;
@@ -148,6 +162,28 @@ if ($result !== null) {
     $resultoutput = (string)($result['output'] ?? '');
     $resultruntimeerror = !empty($result['runtimeError']);
     $resulterrormessage = (string)($result['runtimeError']['message'] ?? '');
+
+    if ($resultruntimeerror) {
+        $runtimeerror = (array)$result['runtimeError'];
+        $runtimefields = [
+            'class' => get_string('diagnosticexceptionclass', 'local_pluginvalidator'),
+            'file' => get_string('diagnosticexceptionfile', 'local_pluginvalidator'),
+            'line' => get_string('diagnosticexceptionline', 'local_pluginvalidator'),
+            'detail' => get_string('diagnosticexceptiondata', 'local_pluginvalidator'),
+            'debuginfo' => get_string('diagnosticdebuginfo', 'local_pluginvalidator'),
+        ];
+        foreach ($runtimefields as $key => $label) {
+            $value = $runtimeerror[$key] ?? '';
+            if ($value === '' || $value === null || $value === false) {
+                continue;
+            }
+            $resulterrordetails[] = [
+                'label' => $label,
+                'value' => (string)$value,
+            ];
+        }
+        $resulterrortrace = (string)($runtimeerror['trace'] ?? '');
+    }
 
     $resultengineid = (string)($result['engine'] ?? '');
     if ($resultengineid !== '' && isset($engines[$resultengineid])) {
@@ -201,6 +237,8 @@ if ($result !== null) {
 
                 $target = (string)($check['target'] ?? '');
                 $check['hastarget'] = $target !== '' && $target !== $file;
+                $check['hastechnicaldetails'] = !empty($check['technicaldetails'])
+                    || !empty($check['exceptiontrace']);
 
                 $viewchecks[] = $check;
             }
@@ -240,6 +278,9 @@ $templatedata = [
     'resultgroups' => $resultgroups,
     'resultruntimeerror' => $resultruntimeerror,
     'resulterrormessage' => $resulterrormessage,
+    'hasresulterrordetails' => !empty($resulterrordetails) || $resulterrortrace !== '',
+    'resulterrordetails' => $resulterrordetails,
+    'resulterrortrace' => $resulterrortrace,
 ];
 
 echo $OUTPUT->header();

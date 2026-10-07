@@ -468,30 +468,180 @@ class execution_checks {
         if (!is_file($file)) {
             return;
         }
+
         $rule = 'execution:events';
+        $currenttarget = '';
+        $currentdetails = [
+            [
+                'label' => 'Plugin being validated',
+                'value' => (string)$plugin['component'],
+            ],
+            [
+                'label' => 'Plugin root',
+                'value' => $this->root($plugin),
+            ],
+            [
+                'label' => 'Observer declaration',
+                'value' => 'db/events.php',
+            ],
+        ];
+        $explanation = '';
+        $howtofix = '';
+
         try {
             $observers = $this->load_array_file($file, 'observers');
             if ($observers === []) {
                 throw new coding_exception('db/events.php does not declare observers.');
             }
+
+            $position = 0;
             foreach ($observers as $observer) {
+                $position++;
                 $eventname = ltrim((string)($observer['eventname'] ?? ''), '\\');
                 $callback = $observer['callback'] ?? null;
+                $currenttarget = $eventname;
+                $eventcomponent = '';
+
+                if ($eventname !== '') {
+                    $separator = strpos($eventname, '\\');
+                    if ($separator !== false) {
+                        $eventcomponent = substr($eventname, 0, $separator);
+                    }
+                }
+
+                $isexternal = $eventcomponent !== ''
+                    && $eventcomponent !== (string)$plugin['component'];
+                $componentdir = $eventcomponent !== ''
+                    ? \core_component::get_component_directory($eventcomponent)
+                    : null;
+                $eventclassexists = $eventname !== '' && class_exists($eventname);
+                $eventisvalid = $eventclassexists
+                    && is_subclass_of($eventname, \core\event\base::class);
+
+                $currentdetails = [
+                    [
+                        'label' => 'Plugin being validated',
+                        'value' => (string)$plugin['component'],
+                    ],
+                    [
+                        'label' => 'Plugin root',
+                        'value' => $this->root($plugin),
+                    ],
+                    [
+                        'label' => 'Observer declaration',
+                        'value' => 'db/events.php',
+                    ],
+                    [
+                        'label' => 'Observer',
+                        'value' => '#' . $position,
+                    ],
+                    [
+                        'label' => 'Observed event',
+                        'value' => $eventname !== '' ? $eventname : '(empty)',
+                    ],
+                    [
+                        'label' => 'Event component',
+                        'value' => $eventcomponent !== '' ? $eventcomponent : '(unknown)',
+                    ],
+                    [
+                        'label' => 'Callback',
+                        'value' => $this->callback_name($callback),
+                    ],
+                    [
+                        'label' => 'Cross-component observer',
+                        'value' => $isexternal ? 'Yes' : 'No',
+                    ],
+                    [
+                        'label' => 'Event component installed',
+                        'value' => $eventcomponent === '' ? 'Unknown' : ($componentdir !== null ? 'Yes' : 'No'),
+                    ],
+                    [
+                        'label' => 'Event class exists',
+                        'value' => $eventclassexists ? 'Yes' : 'No',
+                    ],
+                    [
+                        'label' => 'Extends core\\event\\base',
+                        'value' => !$eventclassexists ? 'Not checked' : ($eventisvalid ? 'Yes' : 'No'),
+                    ],
+                ];
+
+                $explanation = '';
+                $howtofix = '';
+
                 if (!empty($observer['includefile'])) {
                     require_once($this->root($plugin) . '/' . ltrim((string)$observer['includefile'], '/'));
                 }
-                if ($eventname === '' || !class_exists($eventname)
-                        || !is_subclass_of($eventname, \core\event\base::class)) {
-                    throw new coding_exception("Observer event '{$eventname}' is not a valid Moodle event class.");
+
+                if ($eventname === '') {
+                    $explanation = 'The observer declaration does not contain a usable eventname.';
+                    $howtofix = 'Set eventname in db/events.php to the fully qualified Moodle event class.';
+                    throw new coding_exception(
+                        "Observer #{$position} in db/events.php does not declare a valid eventname."
+                    );
                 }
+
+                if (!$eventclassexists) {
+                    $explanation = $isexternal
+                        ? "The plugin {$plugin['component']} observes an event owned by {$eventcomponent}, "
+                            . 'but that event class is not available in this Moodle instance.'
+                        : 'The observer references an event class that Moodle cannot autoload.';
+
+                    if ($isexternal && $componentdir === null) {
+                        $howtofix = "Install the required component {$eventcomponent}, remove or update the observer, "
+                            . 'and declare the dependency in version.php when the plugin requires it.';
+                    } else if ($isexternal) {
+                        $howtofix = "The component {$eventcomponent} is installed, so check whether the event was "
+                            . 'renamed or removed and whether the installed plugin versions are compatible.';
+                    } else {
+                        $howtofix = 'Check the event namespace, classes/event file path and class name.';
+                    }
+
+                    $message = "While validating {$plugin['component']}, observer #{$position} in db/events.php "
+                        . "references event '{$eventname}', but the event class cannot be loaded.";
+                    if ($isexternal) {
+                        $message .= " The event belongs to external component '{$eventcomponent}'.";
+                    }
+                    throw new coding_exception($message);
+                }
+
+                if (!$eventisvalid) {
+                    $explanation = 'The referenced class exists, but it is not a Moodle event class.';
+                    $howtofix = "Make {$eventname} extend core\\event\\base, or update eventname to the correct event.";
+                    throw new coding_exception(
+                        "Observer #{$position} event '{$eventname}' exists but does not extend core\\event\\base."
+                    );
+                }
+
                 $this->validate_callable($callback, 1);
-                $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
+                $this->add_check(
+                    $groups,
+                    $rule,
+                    'ok',
+                    self::STATE_CONTRACT,
                     "Observer for {$eventname} resolves to a callable accepting an event object; event dispatch was skipped.",
-                    'db/events.php', $this->callback_name($callback));
+                    'db/events.php',
+                    $this->callback_name($callback)
+                );
             }
         } catch (Throwable $e) {
-            $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Event observer validation failed: ' . $e->getMessage(), 'db/events.php');
+            $diagnostics = $this->exception_diagnostics($e, $currentdetails);
+            if ($explanation !== '') {
+                $diagnostics['explanation'] = $explanation;
+            }
+            if ($howtofix !== '') {
+                $diagnostics['howToFix'] = $howtofix;
+            }
+
+            $this->add_check(
+                $groups,
+                $rule,
+                'error',
+                self::STATE_EXECUTED,
+                'Event observer validation failed: ' . $e->getMessage(),
+                'db/events.php',
+                $currenttarget,
+                $diagnostics
+            );
         }
     }
 
@@ -1054,6 +1204,49 @@ class execution_checks {
     }
 
     /**
+     * Builds structured technical diagnostics for a runtime exception.
+     *
+     * @param Throwable $e Exception to describe.
+     * @param array $details Context-specific label/value pairs.
+     * @return array
+     */
+    private function exception_diagnostics(Throwable $e, array $details = []): array {
+        $details[] = [
+            'label' => 'Exception class',
+            'value' => get_class($e),
+        ];
+        $details[] = [
+            'label' => 'Exception location',
+            'value' => $e->getFile() . ':' . $e->getLine(),
+        ];
+
+        if (property_exists($e, 'a') && $e->a !== null && $e->a !== '') {
+            $detail = is_scalar($e->a)
+                ? (string)$e->a
+                : json_encode($e->a, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($detail !== false && $detail !== '') {
+                $details[] = [
+                    'label' => 'Moodle exception data',
+                    'value' => $detail,
+                ];
+            }
+        }
+
+        if (property_exists($e, 'debuginfo') && !empty($e->debuginfo)) {
+            $details[] = [
+                'label' => 'Moodle debug info',
+                'value' => (string)$e->debuginfo,
+            ];
+        }
+
+        return [
+            'hastechnicaldetails' => true,
+            'technicaldetails' => $details,
+            'exceptiontrace' => $e->getTraceAsString(),
+        ];
+    }
+
+    /**
      * Formats runtime exceptions while preserving Moodle-specific diagnostic values.
      *
      * @param Throwable $e Exception to format.
@@ -1255,7 +1448,8 @@ class execution_checks {
         string $executionstate,
         string $message,
         string $file = '',
-        string $target = ''
+        string $target = '',
+        array $diagnostics = []
     ): void {
         if (!isset($groups[$rule])) {
             $groups[$rule] = [
@@ -1285,7 +1479,7 @@ class execution_checks {
         } else {
             $groups[$rule]['summary']['notapplicable']++;
         }
-        $groups[$rule]['checks'][] = [
+        $check = [
             'status' => $status,
             'executionstate' => $executionstate,
             'rule' => $rule,
@@ -1295,5 +1489,11 @@ class execution_checks {
             'target' => $target,
             'message' => $message,
         ];
+
+        foreach ($diagnostics as $key => $value) {
+            $check[$key] = $value;
+        }
+
+        $groups[$rule]['checks'][] = $check;
     }
 }

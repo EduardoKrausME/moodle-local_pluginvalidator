@@ -212,6 +212,25 @@
             <div class="alert alert-danger lpv-runtime-error">
                 <strong>{{#str}}validationruntimeerror, local_pluginvalidator{{/str}}:</strong>
                 {{resulterrormessage}}
+                {{#hasresulterrordetails}}
+                    <details class="lpv-diagnostics">
+                        <summary>{{#str}}technicaldetails, local_pluginvalidator{{/str}}</summary>
+                        <div class="lpv-diagnostics-body">
+                            {{#resulterrordetails}}
+                                <div class="lpv-diagnostic-row">
+                                    <strong>{{label}}</strong>
+                                    <code>{{value}}</code>
+                                </div>
+                            {{/resulterrordetails}}
+                            {{#resulterrortrace}}
+                                <div class="lpv-diagnostic-trace">
+                                    <strong>{{#str}}stacktrace, local_pluginvalidator{{/str}}</strong>
+                                    <pre><code>{{resulterrortrace}}</code></pre>
+                                </div>
+                            {{/resulterrortrace}}
+                        </div>
+                    </details>
+                {{/hasresulterrordetails}}
             </div>
         {{/resultruntimeerror}}
 
@@ -276,6 +295,26 @@
                                                 <div class="lpv-detail-text">{{howToFix}}</div>
                                             </div>
                                         {{/howToFix}}
+
+                                        {{#hastechnicaldetails}}
+                                            <details class="lpv-diagnostics">
+                                                <summary>{{#str}}technicaldetails, local_pluginvalidator{{/str}}</summary>
+                                                <div class="lpv-diagnostics-body">
+                                                    {{#technicaldetails}}
+                                                        <div class="lpv-diagnostic-row">
+                                                            <strong>{{label}}</strong>
+                                                            <code>{{value}}</code>
+                                                        </div>
+                                                    {{/technicaldetails}}
+                                                    {{#exceptiontrace}}
+                                                        <div class="lpv-diagnostic-trace">
+                                                            <strong>{{#str}}stacktrace, local_pluginvalidator{{/str}}</strong>
+                                                            <pre><code>{{exceptiontrace}}</code></pre>
+                                                        </div>
+                                                    {{/exceptiontrace}}
+                                                </div>
+                                            </details>
+                                        {{/hastechnicaldetails}}
 
                                         {{#haslocation}}
                                             <div class="lpv-location">

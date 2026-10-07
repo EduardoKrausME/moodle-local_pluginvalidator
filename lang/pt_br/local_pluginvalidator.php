@@ -25,6 +25,11 @@
 defined('MOODLE_INTERNAL') || die;
 
 $string['back'] = 'Voltar';
+$string['diagnosticdebuginfo'] = 'Informações de depuração do Moodle';
+$string['diagnosticexceptionclass'] = 'Classe da exceção';
+$string['diagnosticexceptiondata'] = 'Dados da exceção do Moodle';
+$string['diagnosticexceptionfile'] = 'Arquivo da exceção';
+$string['diagnosticexceptionline'] = 'Linha da exceção';
 $string['engine'] = 'Motor de validação';
 $string['engine_execution'] = 'Validação de execução';
 $string['engine_execution_desc'] = 'Executa testes reais e validações de contrato dentro do Moodle, incluindo backup/restauração, callbacks de lib.php, tarefas, eventos, hooks, configurações administrativas, privacidade, blocos, filtros, File API, notas, conclusão e smoke tests por tipo de plugin.';
@@ -81,7 +86,9 @@ $string['searchplugins'] = 'Buscar plugins';
 $string['searchresultsfor'] = 'Resultados para "{$a}"';
 $string['statuserror'] = 'Erro';
 $string['statusok'] = 'OK';
+$string['stacktrace'] = 'Stack trace';
 $string['statuswarning'] = 'Aviso';
+$string['technicaldetails'] = 'Detalhes técnicos';
 $string['summaryerrors'] = 'Erros';
 $string['summaryok'] = 'OK';
 $string['summarywarnings'] = 'Avisos';
