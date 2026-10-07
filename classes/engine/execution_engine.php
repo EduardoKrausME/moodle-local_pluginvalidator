@@ -17,6 +17,7 @@
 namespace local_pluginvalidator\engine;
 
 use coding_exception;
+use local_pluginvalidator\moodle_class_loader;
 use Throwable;
 
 /**
@@ -301,6 +302,14 @@ class execution_engine implements validation_engine_interface {
             $function->component = (string)$plugin['component'];
 
             try {
+                // external_function_info() first relies on class_exists(). When Moodle's
+                // component class map is stale, a valid namespaced implementation can
+                // incorrectly fall through to its legacy classpath handling. Preload the
+                // Moodle class from the component classes/ tree before asking core to
+                // validate the external function contract.
+                $classdiagnostics = [];
+                moodle_class_loader::load_symbol((string)($function->classname ?? ''), $classdiagnostics);
+
                 $info = \external_api::external_function_info($function);
 
                 $registered = $DB->get_record('external_functions', ['name' => $name], '*', IGNORE_MISSING);
@@ -315,6 +324,7 @@ class execution_engine implements validation_engine_interface {
                     );
                 }
 
+                moodle_class_loader::load_symbol((string)($registered->classname ?? ''));
                 $registeredinfo = \external_api::external_function_info($registered);
                 $arguments = $this->get_safe_external_arguments($registeredinfo->parameters_desc);
                 $type = (string)($definition['type'] ?? '');

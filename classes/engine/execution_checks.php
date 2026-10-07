@@ -17,6 +17,7 @@
 namespace local_pluginvalidator\engine;
 
 use coding_exception;
+use local_pluginvalidator\moodle_class_loader;
 use ReflectionFunction;
 use ReflectionMethod;
 use Throwable;
@@ -393,7 +394,7 @@ class execution_checks {
             }
             foreach ($tasks as $task) {
                 $classname = (string)($task['classname'] ?? '');
-                if ($classname === '' || !$this->load_moodle_symbol($classname)) {
+                if ($classname === '' || !moodle_class_loader::load_symbol($classname)) {
                     throw new coding_exception("Scheduled task class '{$classname}' cannot be loaded.");
                 }
                 if (!is_subclass_of($classname, \core\task\scheduled_task::class)) {
@@ -429,7 +430,7 @@ class execution_checks {
         $found = false;
         foreach ($classes as $classname) {
             try {
-                if (!$this->load_moodle_symbol($classname)
+                if (!moodle_class_loader::load_symbol($classname)
                         || !is_subclass_of($classname, \core\task\adhoc_task::class)) {
                     continue;
                 }
@@ -509,7 +510,7 @@ class execution_checks {
 
                 $eventresolution = [];
                 $eventclassexists = $eventname !== ''
-                    && $this->load_moodle_symbol($eventname, $eventresolution);
+                    && moodle_class_loader::load_symbol($eventname, $eventresolution);
                 $componentdir = (string)($eventresolution['componentdir'] ?? '');
                 $eventautoloaded = !empty($eventresolution['autoloaded']);
                 $eventclassfile = (string)($eventresolution['file'] ?? '');
@@ -655,7 +656,7 @@ class execution_checks {
             foreach ($callbacks as $definition) {
                 $hook = ltrim((string)($definition['hook'] ?? ''), '\\');
                 $callback = $definition['callback'] ?? null;
-                if ($hook === '' || !$this->load_moodle_symbol($hook)) {
+                if ($hook === '' || !moodle_class_loader::load_symbol($hook)) {
                     throw new coding_exception("Hook '{$hook}' cannot be loaded on this Moodle version.");
                 }
                 $this->validate_callable($callback, 1);
@@ -708,7 +709,7 @@ class execution_checks {
         $rule = 'execution:privacy';
         $classname = (string)$plugin['component'] . '\\privacy\\provider';
         try {
-            if (!$this->load_moodle_symbol($classname)) {
+            if (!moodle_class_loader::load_symbol($classname)) {
                 throw new coding_exception("Privacy provider {$classname} cannot be loaded.");
             }
             if (is_subclass_of($classname, \core_privacy\local\metadata\provider::class)) {
@@ -804,7 +805,7 @@ class execution_checks {
             $candidates = ['filter_' . $name, 'filter_' . $name . '\\text_filter'];
             $classname = '';
             foreach ($candidates as $candidate) {
-                if ($this->load_moodle_symbol($candidate)) {
+                if (moodle_class_loader::load_symbol($candidate)) {
                     $classname = $candidate;
                     break;
                 }
@@ -935,7 +936,7 @@ class execution_checks {
         $hasrules = function_exists($supports) && defined('FEATURE_COMPLETION_HAS_RULES')
             ? (bool)$supports(FEATURE_COMPLETION_HAS_RULES) : false;
         $classname = 'mod_' . $name . '\\completion\\custom_completion';
-        $hasclass = $this->load_moodle_symbol($classname);
+        $hasclass = moodle_class_loader::load_symbol($classname);
 
         if (!$hasrules && !$hasclass && !function_exists($legacy) && !is_dir($root . '/completion')) {
             return;
@@ -1009,7 +1010,7 @@ class execution_checks {
         global $PAGE;
         $file = $this->root($plugin) . '/renderer.php';
         $namespaced = (string)$plugin['component'] . '\\output\\renderer';
-        if (!is_file($file) && !$this->load_moodle_symbol($namespaced)) {
+        if (!is_file($file) && !moodle_class_loader::load_symbol($namespaced)) {
             return;
         }
         $rule = 'execution:renderer';
@@ -1336,9 +1337,9 @@ class execution_checks {
     private function validate_callable($callback, int $minimumparameters): void {
         if (is_string($callback) && str_contains($callback, '::')) {
             [$callbackclass] = explode('::', ltrim($callback, '\\'), 2);
-            $this->load_moodle_symbol($callbackclass);
+            moodle_class_loader::load_symbol($callbackclass);
         } else if (is_array($callback) && isset($callback[0]) && is_string($callback[0])) {
-            $this->load_moodle_symbol($callback[0]);
+            moodle_class_loader::load_symbol($callback[0]);
         }
 
         if (!is_callable($callback)) {
@@ -1373,102 +1374,6 @@ class execution_checks {
             return (is_object($callback[0]) ? get_class($callback[0]) : (string)$callback[0]) . '::' . $callback[1];
         }
         return get_debug_type($callback);
-    }
-
-    /**
-     * Loads a Moodle namespaced class, interface, trait or enum reliably.
-     *
-     * The normal PHP/Moodle autoloader is tried first. If Moodle's component map
-     * was built before a plugin class became available, the validator resolves the
-     * component root and loads the conventional classes/... file directly. This is
-     * especially important when validating cross-component observers and callbacks.
-     *
-     * @param string $symbol Fully-qualified Moodle symbol.
-     * @param array|null $diagnostics Optional resolution details.
-     * @return bool True when the symbol is available after resolution.
-     */
-    private function load_moodle_symbol(string $symbol, ?array &$diagnostics = null): bool {
-        $symbol = ltrim(trim($symbol), '\\');
-        $diagnostics = [
-            'symbol' => $symbol,
-            'component' => '',
-            'componentdir' => '',
-            'file' => '',
-            'fileexists' => false,
-            'autoloaded' => false,
-            'directloaded' => false,
-        ];
-
-        if ($symbol === '') {
-            return false;
-        }
-
-        if ($this->symbol_exists($symbol, true)) {
-            $diagnostics['autoloaded'] = true;
-            return true;
-        }
-
-        $separator = strpos($symbol, '\\');
-        if ($separator === false) {
-            return false;
-        }
-
-        $component = substr($symbol, 0, $separator);
-        $relativeclass = substr($symbol, $separator + 1);
-        $diagnostics['component'] = $component;
-
-        $componentdir = \core_component::get_component_directory($component);
-        if (!is_string($componentdir) || $componentdir === '') {
-            // Do not depend solely on Moodle's component directory cache. Resolve a
-            // plugin component from its type root as a fallback.
-            [$type, $name] = \core_component::normalize_component($component);
-            $plugintypes = \core_component::get_plugin_types();
-            if ($type !== 'core' && $name !== null && isset($plugintypes[$type])) {
-                $candidate = rtrim((string)$plugintypes[$type], DIRECTORY_SEPARATOR)
-                    . DIRECTORY_SEPARATOR . $name;
-                if (is_dir($candidate)) {
-                    $componentdir = $candidate;
-                }
-            }
-        }
-
-        if (!is_string($componentdir) || $componentdir === '') {
-            return false;
-        }
-
-        $diagnostics['componentdir'] = $componentdir;
-        $classfile = rtrim($componentdir, DIRECTORY_SEPARATOR)
-            . DIRECTORY_SEPARATOR . 'classes'
-            . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $relativeclass)
-            . '.php';
-        $diagnostics['file'] = $classfile;
-        $diagnostics['fileexists'] = is_file($classfile);
-
-        if (!$diagnostics['fileexists']) {
-            return false;
-        }
-
-        require_once($classfile);
-        $diagnostics['directloaded'] = $this->symbol_exists($symbol, false);
-
-        return $diagnostics['directloaded'];
-    }
-
-    /**
-     * Tests whether a PHP symbol exists.
-     *
-     * @param string $symbol Fully-qualified symbol.
-     * @param bool $autoload Whether registered autoloaders may run.
-     * @return bool
-     */
-    private function symbol_exists(string $symbol, bool $autoload): bool {
-        if (class_exists($symbol, $autoload)
-                || interface_exists($symbol, $autoload)
-                || trait_exists($symbol, $autoload)) {
-            return true;
-        }
-
-        return function_exists('enum_exists') && enum_exists($symbol, $autoload);
     }
 
     /**
