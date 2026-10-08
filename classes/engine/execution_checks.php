@@ -304,7 +304,7 @@ class execution_checks {
             $backupcontroller = null;
 
             // Restore controller expects an extracted Moodle backup in the temp directory.
-            // Depending on the backup execution path, execute_plan() may leave only the
+            // Depending on the backup execution path, execute_plan() may leave only the...
             // generated .mbz available, so mirror Moodle core tests and extract it first.
             if (!file_exists($backupbasepath . '/moodle_backup.xml')) {
                 $backupfile->extract_to_pathname(
