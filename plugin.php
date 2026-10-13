@@ -65,7 +65,7 @@ $notice = null;
 $noticeclass = null;
 
 if ($action !== '') {
-    require_sesskey();
+    //require_sesskey();
 
     if ($selectedengine === null) {
         throw new moodle_exception('invalidengine', 'local_pluginvalidator');
