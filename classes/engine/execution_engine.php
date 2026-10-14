@@ -302,7 +302,7 @@ class execution_engine implements validation_engine_interface {
             $function->component = (string)$plugin['component'];
 
             try {
-                // external_function_info() first relies on class_exists(). When Moodle's
+                // The external_function_info() constructor relies on class_exists(). When Moodle's
                 // component class map is stale, a valid namespaced implementation can
                 // incorrectly fall through to its legacy classpath handling. Preload the
                 // Moodle class from the component classes/ tree before asking core to
