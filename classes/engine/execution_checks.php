@@ -520,6 +520,15 @@ class execution_checks {
                 $eventisvalid = $eventclassexists
                     && is_subclass_of($eventname, \core\event\base::class);
 
+                $yes = get_string('runtimestate01', 'local_pluginvalidator');
+                $no = get_string('runtimestate02', 'local_pluginvalidator');
+                $unknown = get_string('runtimestate03', 'local_pluginvalidator');
+                $notchecked = get_string('runtimestate04', 'local_pluginvalidator');
+                $notattempted = get_string('runtimestate05', 'local_pluginvalidator');
+                $unknownvalue = get_string('runtimestate06', 'local_pluginvalidator');
+                $emptyvalue = get_string('runtimestate07', 'local_pluginvalidator');
+                $notresolved = get_string('runtimestate08', 'local_pluginvalidator');
+
                 $currentdetails = [
                     [
                         'label' => get_string('runtimeeventdiag01', 'local_pluginvalidator'),
@@ -535,11 +544,11 @@ class execution_checks {
                     ],
                     [
                         'label' => get_string('runtimeeventdiag04', 'local_pluginvalidator'),
-                        'value' => $eventname !== '' ? $eventname : get_string('runtimestate07', 'local_pluginvalidator'),
+                        'value' => $eventname !== '' ? $eventname : $emptyvalue,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag05', 'local_pluginvalidator'),
-                        'value' => $eventcomponent !== '' ? $eventcomponent : get_string('runtimestate06', 'local_pluginvalidator'),
+                        'value' => $eventcomponent !== '' ? $eventcomponent : $unknownvalue,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag06', 'local_pluginvalidator'),
@@ -547,41 +556,41 @@ class execution_checks {
                     ],
                     [
                         'label' => get_string('runtimeeventdiag07', 'local_pluginvalidator'),
-                        'value' => $isexternal ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator'),
+                        'value' => $isexternal ? $yes : $no,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag08', 'local_pluginvalidator'),
                         'value' => $eventcomponent === ''
-                            ? get_string('runtimestate03', 'local_pluginvalidator')
-                            : ($componentdir !== '' ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')),
+                            ? $unknown
+                            : ($componentdir !== '' ? $yes : $no),
                     ],
                     [
                         'label' => get_string('runtimeeventdiag09', 'local_pluginvalidator'),
-                        'value' => $componentdir !== '' ? $componentdir : get_string('runtimestate08', 'local_pluginvalidator'),
+                        'value' => $componentdir !== '' ? $componentdir : $notresolved,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag10', 'local_pluginvalidator'),
-                        'value' => $eventautoloaded ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator'),
+                        'value' => $eventautoloaded ? $yes : $no,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag11', 'local_pluginvalidator'),
-                        'value' => $eventclassfile !== '' ? $eventclassfile : get_string('runtimestate08', 'local_pluginvalidator'),
+                        'value' => $eventclassfile !== '' ? $eventclassfile : $notresolved,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag12', 'local_pluginvalidator'),
-                        'value' => $eventclassfile !== '' ? ($eventclassfileexists ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')) : get_string('runtimestate04', 'local_pluginvalidator'),
+                        'value' => $eventclassfile !== '' ? ($eventclassfileexists ? $yes : $no) : $notchecked,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag13', 'local_pluginvalidator'),
-                        'value' => $eventclassfileexists ? ($eventfallbackloaded ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')) : get_string('runtimestate05', 'local_pluginvalidator'),
+                        'value' => $eventclassfileexists ? ($eventfallbackloaded ? $yes : $no) : $notattempted,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag14', 'local_pluginvalidator'),
-                        'value' => $eventclassexists ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator'),
+                        'value' => $eventclassexists ? $yes : $no,
                     ],
                     [
                         'label' => get_string('runtimeeventdiag15', 'local_pluginvalidator'),
-                        'value' => !$eventclassexists ? get_string('runtimestate04', 'local_pluginvalidator') : ($eventisvalid ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')),
+                        'value' => !$eventclassexists ? $notchecked : ($eventisvalid ? $yes : $no),
                     ],
                 ];
 
