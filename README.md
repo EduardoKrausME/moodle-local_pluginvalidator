@@ -50,20 +50,26 @@ itself because `local_pluginvalidator` is an extension plugin.
 
 ## Moodle Plugin Validate engine
 
-The external Moodle Plugin Validate engine manages its own upstream release and local installation. Its release ZIP is
-extracted to:
+The Moodle Plugin Validate library is bundled under `vendor/moodle-plugin-validate/` from the
+reviewed upstream **1.2.6** release (GPL-3.0-or-later; see `thirdpartylibs.xml`).
+No downloaded executable PHP is loaded from `moodledata`. The installer/update button is
+removed because the library now ships with the plugin. Previously downloaded copies under
+`$CFG->dataroot/local_pluginvalidator/tools` are not loaded and may be removed manually.
 
-    $CFG->dataroot/local_pluginvalidator/tools/moodle-plugin-validate
+The Runtime execution engine is part of this plugin and requires no separate installation.
 
-Downloaded versions take precedence over an optional bundled copy under `local/pluginvalidator/tools/`.
+### Downloadable ZIP
 
-The Runtime execution engine is part of this plugin and does not require installation or updates of its own.
+Tagged GitHub releases attach `local_pluginvalidator.zip` with a single top-level
+`pluginvalidator/` directory that the Moodle plugin installer accepts. Do not use GitHub's
+automatic source ZIP, whose generated root folder is incompatible with Moodle.
 
 ## Requirements
 
 - Moodle 4.1 or newer.
-- PHP 8.1 or newer for moodle-plugin-validate.
-- Outbound HTTPS access to GitHub only when installing or updating Moodle Plugin Validate.
+- PHP 7.4 or newer for Runtime execution on supported Moodle 4.1 sites.
+- PHP 8.1 or newer for the bundled Moodle Plugin Validate engine (disabled on older PHP).
+- No outbound network access is required for either engine.
 
 PHP CLI, `proc_open()`, `exec()`, and `$CFG->pathtophp` are not required.
 

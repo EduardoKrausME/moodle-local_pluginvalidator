@@ -137,7 +137,7 @@ class execution_checks {
                     continue;
                 }
 
-                if (str_ends_with($function, '_supports')) {
+                if (substr($function, -strlen('_supports')) === '_supports') {
                     $features = array_filter([
                         defined('FEATURE_COMPLETION_HAS_RULES') ? FEATURE_COMPLETION_HAS_RULES : null,
                         defined('FEATURE_GRADE_HAS_GRADE') ? FEATURE_GRADE_HAS_GRADE : null,
@@ -159,14 +159,14 @@ class execution_checks {
                     continue;
                 }
 
-                if (str_ends_with($function, '_get_coursemodule_info')) {
+                if (substr($function, -strlen('_get_coursemodule_info')) === '_get_coursemodule_info') {
                     $function($module['cm']);
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                         "{$function}() executed with course module {$module['cm']->id}.", 'lib.php', $function);
                     continue;
                 }
 
-                if (str_ends_with($function, '_get_file_areas')) {
+                if (substr($function, -strlen('_get_file_areas')) === '_get_file_areas') {
                     $areas = $function($module['course'], $module['cm'], $module['context']);
                     if (!is_array($areas)) {
                         throw new coding_exception('get_file_areas() must return an array.');
@@ -1335,7 +1335,7 @@ class execution_checks {
 
      */
     private function validate_callable($callback, int $minimumparameters): void {
-        if (is_string($callback) && str_contains($callback, '::')) {
+        if (is_string($callback) && strpos($callback, '::') !== false) {
             [$callbackclass] = explode('::', ltrim($callback, '\\'), 2);
             moodle_class_loader::load_symbol($callbackclass);
         } else if (is_array($callback) && isset($callback[0]) && is_string($callback[0])) {
@@ -1347,7 +1347,7 @@ class execution_checks {
         }
         if (is_array($callback)) {
             $reflection = new ReflectionMethod($callback[0], $callback[1]);
-        } else if (is_string($callback) && str_contains($callback, '::')) {
+        } else if (is_string($callback) && strpos($callback, '::') !== false) {
             [$class, $method] = explode('::', $callback, 2);
             $reflection = new ReflectionMethod($class, $method);
         } else {
@@ -1373,7 +1373,7 @@ class execution_checks {
         if (is_array($callback) && count($callback) === 2) {
             return (is_object($callback[0]) ? get_class($callback[0]) : (string)$callback[0]) . '::' . $callback[1];
         }
-        return get_debug_type($callback);
+        return (is_object($callback) ? get_class($callback) : gettype($callback));
     }
 
     /**
@@ -1423,7 +1423,7 @@ class execution_checks {
      */
     private function class_file(array $plugin, string $classname): string {
         $prefix = (string)$plugin['component'] . '\\';
-        if (!str_starts_with($classname, $prefix)) {
+        if (!strpos($classname, $prefix) !== 0) {
             return 'classes';
         }
         return 'classes/' . str_replace('\\', '/', substr($classname, strlen($prefix))) . '.php';

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<libraries>
+    <library>
+        <location>vendor/moodle-plugin-validate</location>
+        <name>moodle-plugin-validate</name>
+        <version>1.2.6</version>
+        <license>GPL-3.0-or-later</license>
+        <licensefile>vendor/moodle-plugin-validate/LICENSE</licensefile>
+    </library>
+</libraries>

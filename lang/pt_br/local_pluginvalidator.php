@@ -24,6 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+$string['enginebundlednoupdate'] = 'Este motor acompanha o plugin. Atualize o pacote do plugin para atualizar o motor.';
+$string['enginephpversion'] = 'O motor Moodle Plugin Validate integrado requer PHP 8.1 ou superior.';
 $string['back'] = 'Voltar';
 $string['diagnosticdebuginfo'] = 'Informações de depuração do Moodle';
 $string['diagnosticexceptionclass'] = 'Classe da exceção';

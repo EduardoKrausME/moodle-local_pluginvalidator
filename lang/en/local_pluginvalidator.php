@@ -24,6 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+$string['enginebundlednoupdate'] = 'The validation engine is bundled with the plugin. Update the plugin package to upgrade the engine.';
+$string['enginephpversion'] = 'The bundled Moodle Plugin Validate engine requires PHP 8.1 or later.';
 $string['back'] = 'Back';
 $string['diagnosticdebuginfo'] = 'Moodle debug info';
 $string['diagnosticexceptionclass'] = 'Exception class';
