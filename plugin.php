@@ -65,9 +65,8 @@ $notice = null;
 $noticeclass = null;
 
 if ($action !== '') {
-    if ($action === 'installengine') {
-        require_sesskey();
-    }
+    // Validation can execute plugin callbacks, so all actions need CSRF protection.
+    require_sesskey();
 
     if ($selectedengine === null) {
         throw new moodle_exception('invalidengine', 'local_pluginvalidator');
