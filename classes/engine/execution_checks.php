@@ -92,7 +92,7 @@ class execution_checks {
             require_once($file);
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'lib.php failed while loading: ' . $e->getMessage(), 'lib.php');
+                get_string('runtimecheck01', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php');
             return;
         }
 
@@ -132,7 +132,7 @@ class execution_checks {
 
                 if ($mode === 'contract') {
                     $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                        "{$function}() loaded and its callable contract is valid; execution is intentionally skipped.",
+                        get_string('runtimecheck02', 'local_pluginvalidator', (object)['p1' => $function]),
                         'lib.php', $function);
                     continue;
                 }
@@ -148,13 +148,13 @@ class execution_checks {
                         $function($feature);
                     }
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        "{$function}() executed for standard feature constants without errors.", 'lib.php', $function);
+                        get_string('runtimecheck03', 'local_pluginvalidator', (object)['p1' => $function]), 'lib.php', $function);
                     continue;
                 }
 
                 if ($module === null) {
                     $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                        "{$function}() is callable, but no installed module instance exists for a safe runtime call.",
+                        get_string('runtimecheck04', 'local_pluginvalidator', (object)['p1' => $function]),
                         'lib.php', $function);
                     continue;
                 }
@@ -162,7 +162,7 @@ class execution_checks {
                 if (substr($function, -strlen('_get_coursemodule_info')) === '_get_coursemodule_info') {
                     $function($module['cm']);
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        "{$function}() executed with course module {$module['cm']->id}.", 'lib.php', $function);
+                        get_string('runtimecheck05', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => $module['cm']->id]), 'lib.php', $function);
                     continue;
                 }
 
@@ -172,18 +172,18 @@ class execution_checks {
                         throw new coding_exception('get_file_areas() must return an array.');
                     }
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        "{$function}() executed and returned " . count($areas) . ' file area(s).', 'lib.php', $function);
+                        get_string('runtimecheck06', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => count($areas)]), 'lib.php', $function);
                     $this->validate_file_storage($plugin, $module, $areas, $groups);
                 }
             } catch (Throwable $e) {
                 $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                    "{$function}() failed: {$e->getMessage()}", 'lib.php', $function);
+                    get_string('runtimecheck07', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => $e->getMessage()]), 'lib.php', $function);
             }
         }
 
         if (!$found) {
             $this->add_check($groups, $rule, 'ok', self::STATE_NOT_APPLICABLE,
-                'lib.php loaded, but none of the standard runtime callbacks targeted by this validator are declared.',
+                get_string('runtimecheck08', 'local_pluginvalidator'),
                 'lib.php');
         }
     }
@@ -226,10 +226,10 @@ class execution_checks {
                 throw new coding_exception('File API round-trip did not return the written content.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "File API create/read/delete round-trip succeeded in area '{$filearea}'.", 'lib.php', $filearea);
+                get_string('runtimecheck09', 'local_pluginvalidator', (object)['p1' => $filearea]), 'lib.php', $filearea);
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'File API round-trip failed: ' . $e->getMessage(), 'lib.php', $filearea);
+                get_string('runtimecheck10', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php', $filearea);
         } finally {
             if ($storedfile) {
                 try {
@@ -259,7 +259,7 @@ class execution_checks {
         $rule = 'execution:backup_restore';
         if (($plugin['type'] ?? '') !== 'mod') {
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                'backup/moodle2 exists, but automatic round-trip execution is limited to activity modules.',
+                get_string('runtimecheck11', 'local_pluginvalidator'),
                 'backup/moodle2');
             return;
         }
@@ -267,7 +267,7 @@ class execution_checks {
         $module = $this->get_module_runtime($plugin);
         if ($module === null) {
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                'Backup/restore classes are present, but no installed activity instance exists for a real round-trip.',
+                get_string('runtimecheck12', 'local_pluginvalidator'),
                 'backup/moodle2');
             return;
         }
@@ -332,11 +332,11 @@ class execution_checks {
             }
 
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "Backup + restore round-trip executed successfully from cmid {$module['cm']->id} to temporary cmid {$newcmid}.",
+                get_string('runtimecheck13', 'local_pluginvalidator', (object)['p1' => $module['cm']->id, 'p2' => $newcmid]),
                 'backup/moodle2', 'cmid=' . (int)$module['cm']->id);
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Backup + restore round-trip failed: ' . $this->format_exception($e), 'backup/moodle2',
+                get_string('runtimecheck14', 'local_pluginvalidator', (object)['p1' => $this->format_exception($e)]), 'backup/moodle2',
                 'cmid=' . (int)$module['cm']->id);
         } finally {
             if ($restorecontroller) {
@@ -410,12 +410,12 @@ class execution_checks {
                     throw new coding_exception("{$classname}::execute() must be public and parameterless.");
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                    "{$classname} loaded and get_name() executed; execute() was intentionally not called.",
+                    get_string('runtimecheck15', 'local_pluginvalidator', (object)['p1' => $classname]),
                     'db/tasks.php', $classname);
             }
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Scheduled task validation failed: ' . $e->getMessage(), 'db/tasks.php');
+                get_string('runtimecheck16', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'db/tasks.php');
         }
     }
 
@@ -446,17 +446,17 @@ class execution_checks {
                     throw new coding_exception('execute() must be public and parameterless.');
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                    "{$classname} instantiated and custom data serialized; execute() was intentionally not called.",
+                    get_string('runtimecheck17', 'local_pluginvalidator', (object)['p1' => $classname]),
                     $this->class_file($plugin, $classname), $classname);
             } catch (Throwable $e) {
                 $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                    "Adhoc task {$classname} failed validation: {$e->getMessage()}",
+                    get_string('runtimecheck18', 'local_pluginvalidator', (object)['p1' => $classname, 'p2' => $e->getMessage()]),
                     $this->class_file($plugin, $classname), $classname);
             }
         }
         if (!$found && is_dir($this->root($plugin) . '/classes/task')) {
             $this->add_check($groups, $rule, 'ok', self::STATE_NOT_APPLICABLE,
-                'No class extending core\\task\\adhoc_task was found.', 'classes/task');
+                get_string('runtimecheck19', 'local_pluginvalidator'), 'classes/task');
         }
     }
 
@@ -616,7 +616,7 @@ class execution_checks {
                     $rule,
                     'ok',
                     self::STATE_CONTRACT,
-                    "Observer for {$eventname} resolves to a callable accepting an event object; event dispatch was skipped.",
+                    get_string('runtimecheck20', 'local_pluginvalidator', (object)['p1' => $eventname]),
                     'db/events.php',
                     $this->callback_name($callback)
                 );
@@ -629,7 +629,7 @@ class execution_checks {
                 $rule,
                 'error',
                 self::STATE_EXECUTED,
-                'Event observer validation failed: ' . $e->getMessage(),
+                get_string('runtimecheck21', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]),
                 'db/events.php',
                 $currenttarget,
                 $diagnostics
@@ -661,12 +661,12 @@ class execution_checks {
                 }
                 $this->validate_callable($callback, 1);
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                    "Hook {$hook} and callback {$this->callback_name($callback)} are loadable; dispatch was skipped.",
+                    get_string('runtimecheck22', 'local_pluginvalidator', (object)['p1' => $hook, 'p2' => $this->callback_name($callback)]),
                     'db/hooks.php', $this->callback_name($callback));
             }
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Hook validation failed: ' . $e->getMessage(), 'db/hooks.php');
+                get_string('runtimecheck23', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'db/hooks.php');
         }
     }
 
@@ -689,10 +689,10 @@ class execution_checks {
                 throw new coding_exception('admin_get_root() did not return an administration tree.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                'settings.php loaded successfully while Moodle rebuilt the full administration tree.', 'settings.php');
+                get_string('runtimecheck24', 'local_pluginvalidator'), 'settings.php');
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'settings.php failed while building the administration tree: ' . $e->getMessage(), 'settings.php');
+                get_string('runtimecheck25', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'settings.php');
         }
     }
 
@@ -719,19 +719,19 @@ class execution_checks {
                     throw new coding_exception('get_metadata() did not return a metadata collection.');
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$classname}::get_metadata() executed successfully.", 'classes/privacy/provider.php', $classname);
+                    get_string('runtimecheck26', 'local_pluginvalidator', (object)['p1' => $classname]), 'classes/privacy/provider.php', $classname);
                 return;
             }
             if (is_subclass_of($classname, \core_privacy\local\metadata\null_provider::class)) {
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                    "{$classname} correctly declares core_privacy\\local\\metadata\\null_provider.",
+                    get_string('runtimecheck27', 'local_pluginvalidator', (object)['p1' => $classname]),
                     'classes/privacy/provider.php', $classname);
                 return;
             }
             throw new coding_exception('Provider implements neither metadata provider nor null_provider.');
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Privacy provider validation failed: ' . $e->getMessage(), 'classes/privacy/provider.php', $classname);
+                get_string('runtimecheck28', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'classes/privacy/provider.php', $classname);
         }
     }
 
@@ -761,7 +761,7 @@ class execution_checks {
                 throw new coding_exception('applicable_formats() must return an array.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "{$classname}::init() and applicable_formats() executed successfully.", basename($file), $classname);
+                get_string('runtimecheck29', 'local_pluginvalidator', (object)['p1' => $classname]), basename($file), $classname);
 
             $instance = $DB->get_record('block_instances', ['blockname' => $name], '*', IGNORE_MULTIPLE);
             if ($instance) {
@@ -771,16 +771,16 @@ class execution_checks {
                 }
                 $liveblock->get_content();
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$classname}::get_content() executed using installed block instance {$instance->id}.",
+                    get_string('runtimecheck30', 'local_pluginvalidator', (object)['p1' => $classname, 'p2' => $instance->id]),
                     basename($file), $classname . '::get_content');
             } else {
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                    'get_content() is callable, but no installed block instance exists for a realistic execution context.',
+                    get_string('runtimecheck31', 'local_pluginvalidator'),
                     basename($file), $classname . '::get_content');
             }
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Block runtime validation failed: ' . $e->getMessage(), basename($file));
+                get_string('runtimecheck32', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), basename($file));
         }
     }
 
@@ -819,13 +819,13 @@ class execution_checks {
                 throw new coding_exception('filter() must return a string.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "{$classname}::filter() executed successfully.",
+                get_string('runtimecheck33', 'local_pluginvalidator', (object)['p1' => $classname]),
                 is_file($file) ? 'filter.php' : 'classes/text_filter.php',
                 $classname
             );
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Filter runtime validation failed: ' . $e->getMessage(), is_file($file) ? 'filter.php' : 'classes/text_filter.php');
+                get_string('runtimecheck34', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), is_file($file) ? 'filter.php' : 'classes/text_filter.php');
         }
     }
 
@@ -860,7 +860,7 @@ class execution_checks {
 
         if ($declared && !function_exists($itemupdate)) {
             $this->add_check($groups, $rule, 'error', self::STATE_CONTRACT,
-                'FEATURE_GRADE_HAS_GRADE is declared, but grade_item_update() is missing.', 'lib.php', $itemupdate);
+                get_string('runtimecheck35', 'local_pluginvalidator'), 'lib.php', $itemupdate);
             return;
         }
 
@@ -869,7 +869,7 @@ class execution_checks {
             foreach ([$itemupdate, $updategrades] as $function) {
                 if (function_exists($function)) {
                     $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                        "{$function}() is callable, but no installed instance exists for a safe execution.", 'lib.php', $function);
+                        get_string('runtimecheck36', 'local_pluginvalidator', (object)['p1' => $function]), 'lib.php', $function);
                 }
             }
             return;
@@ -879,7 +879,7 @@ class execution_checks {
             if (function_exists($itemupdate)) {
                 $itemupdate($module['instance']);
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$itemupdate}() executed successfully for instance {$module['instance']->id}.", 'lib.php', $itemupdate);
+                    get_string('runtimecheck37', 'local_pluginvalidator', (object)['p1' => $itemupdate, 'p2' => $module['instance']->id]), 'lib.php', $itemupdate);
             }
             if (function_exists($updategrades)) {
                 $gradeitem = $DB->get_record('grade_items', [
@@ -901,17 +901,16 @@ class execution_checks {
                     }
                     $reflection->invokeArgs($args);
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        "{$updategrades}() executed for existing graded user {$userid}.", 'lib.php', $updategrades);
+                        get_string('runtimecheck38', 'local_pluginvalidator', (object)['p1' => $updategrades, 'p2' => $userid]), 'lib.php', $updategrades);
                 } else {
                     $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                        "{$updategrades}() is valid, but no existing graded user was found; "
-                            . 'mass grade synchronization was skipped.',
+                        get_string('runtimecheck39', 'local_pluginvalidator', (object)['p1' => $updategrades]),
                         'lib.php', $updategrades);
                 }
             }
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Grade API runtime validation failed: ' . $e->getMessage(), 'lib.php');
+                get_string('runtimecheck40', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php');
         }
     }
 
@@ -943,8 +942,7 @@ class execution_checks {
         }
         if ($hasrules && !$hasclass && !function_exists($legacy)) {
             $this->add_check($groups, $rule, 'error', self::STATE_CONTRACT,
-                'FEATURE_COMPLETION_HAS_RULES is declared, but neither the modern custom_completion class '
-                    . 'nor legacy get_completion_state() exists.',
+                get_string('runtimecheck41', 'local_pluginvalidator'),
                 'lib.php');
             return;
         }
@@ -952,7 +950,7 @@ class execution_checks {
         $module = $this->get_module_runtime($plugin);
         if ($module === null) {
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                'Completion API classes/callbacks load, but no installed activity instance exists for runtime evaluation.',
+                get_string('runtimecheck42', 'local_pluginvalidator'),
                 $hasclass ? 'classes/completion/custom_completion.php' : 'lib.php');
             return;
         }
@@ -984,19 +982,18 @@ class execution_checks {
                 }
 
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$classname} loaded; " . count($rules) . ' custom rule(s) were resolved and '
-                        . count($availablerules) . ' enabled rule(s) were evaluated.',
+                    get_string('runtimecheck43', 'local_pluginvalidator', (object)['p1' => $classname, 'p2' => count($rules), 'p3' => count($availablerules)]),
                     'classes/completion/custom_completion.php', $classname);
             }
             if (function_exists($legacy)) {
                 $legacy($module['course'], $module['cm'], (int)$USER->id,
                     defined('COMPLETION_AND') ? COMPLETION_AND : 1);
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    "{$legacy}() executed successfully.", 'lib.php', $legacy);
+                    get_string('runtimecheck44', 'local_pluginvalidator', (object)['p1' => $legacy]), 'lib.php', $legacy);
             }
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Completion API runtime validation failed: ' . $e->getMessage(),
+                get_string('runtimecheck45', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]),
                 $hasclass ? 'classes/completion/custom_completion.php' : 'lib.php');
         }
     }
@@ -1023,12 +1020,12 @@ class execution_checks {
                 throw new coding_exception('Moodle renderer factory returned no renderer.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                'Custom renderer was instantiated successfully by Moodle.',
+                get_string('runtimecheck46', 'local_pluginvalidator'),
                 is_file($file) ? 'renderer.php' : 'classes/output/renderer.php',
                 get_class($renderer));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Renderer validation failed: ' . $e->getMessage(), is_file($file) ? 'renderer.php' : 'classes/output/renderer.php');
+                get_string('runtimecheck47', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), is_file($file) ? 'renderer.php' : 'classes/output/renderer.php');
         }
     }
 
@@ -1047,7 +1044,7 @@ class execution_checks {
         $course = $DB->get_record('course', ['format' => (string)$plugin['name']], '*', IGNORE_MULTIPLE);
         if (!$course) {
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                'Course format class is installed, but no course currently uses it.', 'lib.php');
+                get_string('runtimecheck48', 'local_pluginvalidator'), 'lib.php');
             return;
         }
         try {
@@ -1055,10 +1052,10 @@ class execution_checks {
             $format->get_course();
             $format->get_section(0);
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "Course format loaded course {$course->id} and resolved section 0 successfully.", 'lib.php', get_class($format));
+                get_string('runtimecheck49', 'local_pluginvalidator', (object)['p1' => $course->id]), 'lib.php', get_class($format));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Course format runtime validation failed: ' . $e->getMessage(), 'lib.php');
+                get_string('runtimecheck50', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php');
         }
     }
 
@@ -1083,10 +1080,10 @@ class execution_checks {
             $auth->is_internal();
             $auth->can_change_password();
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                "{$classname} instantiated and basic metadata callbacks executed.", 'auth.php', $classname);
+                get_string('runtimecheck51', 'local_pluginvalidator', (object)['p1' => $classname]), 'auth.php', $classname);
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Authentication plugin validation failed: ' . $e->getMessage(), 'auth.php', $classname);
+                get_string('runtimecheck52', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'auth.php', $classname);
         }
     }
 
@@ -1108,11 +1105,11 @@ class execution_checks {
                 throw new coding_exception('enrol_get_plugin() returned false.');
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                'Enrolment plugin class loaded successfully; add/delete instance operations were intentionally skipped.',
+                get_string('runtimecheck53', 'local_pluginvalidator'),
                 'lib.php', get_class($instance));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Enrolment plugin validation failed: ' . $e->getMessage(), 'lib.php');
+                get_string('runtimecheck54', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php');
         }
     }
 
@@ -1137,11 +1134,11 @@ class execution_checks {
             }
             $reflection = new \ReflectionClass($classname);
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                "{$classname} loaded and repository inheritance is valid; remote listing was intentionally skipped.",
+                get_string('runtimecheck55', 'local_pluginvalidator', (object)['p1' => $classname]),
                 'lib.php', $reflection->getName());
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Repository plugin validation failed: ' . $e->getMessage(), 'lib.php', $classname);
+                get_string('runtimecheck56', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php', $classname);
         }
     }
 
@@ -1164,13 +1161,13 @@ class execution_checks {
             }
             $qtype->menu_name();
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                'Question type instantiated through question_bank and menu_name() executed.',
+                get_string('runtimecheck57', 'local_pluginvalidator'),
                 'questiontype.php',
                 get_class($qtype)
             );
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                'Question type validation failed: ' . $e->getMessage(), 'questiontype.php');
+                get_string('runtimecheck58', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'questiontype.php');
         }
     }
 
