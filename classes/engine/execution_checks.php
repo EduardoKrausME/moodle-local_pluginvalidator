@@ -162,7 +162,11 @@ class execution_checks {
                 if (substr($function, -strlen('_get_coursemodule_info')) === '_get_coursemodule_info') {
                     $function($module['cm']);
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        get_string('runtimecheck05', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => $module['cm']->id]), 'lib.php', $function);
+                        get_string(
+                            'runtimecheck05',
+                            'local_pluginvalidator',
+                            (object)['p1' => $function, 'p2' => $module['cm']->id]
+                        ), 'lib.php', $function);
                     continue;
                 }
 
@@ -172,12 +176,20 @@ class execution_checks {
                         throw new coding_exception(get_string('runtimeexception02', 'local_pluginvalidator'));
                     }
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        get_string('runtimecheck06', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => count($areas)]), 'lib.php', $function);
+                        get_string(
+                            'runtimecheck06',
+                            'local_pluginvalidator',
+                            (object)['p1' => $function, 'p2' => count($areas)]
+                        ), 'lib.php', $function);
                     $this->validate_file_storage($plugin, $module, $areas, $groups);
                 }
             } catch (Throwable $e) {
                 $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                    get_string('runtimecheck07', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => $e->getMessage()]), 'lib.php', $function);
+                    get_string(
+                        'runtimecheck07',
+                        'local_pluginvalidator',
+                        (object)['p1' => $function, 'p2' => $e->getMessage()]
+                    ), 'lib.php', $function);
             }
         }
 
@@ -336,7 +348,11 @@ class execution_checks {
                 'backup/moodle2', 'cmid=' . (int)$module['cm']->id);
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                get_string('runtimecheck14', 'local_pluginvalidator', (object)['p1' => $this->format_exception($e)]), 'backup/moodle2',
+                get_string(
+                    'runtimecheck14',
+                    'local_pluginvalidator',
+                    (object)['p1' => $this->format_exception($e)]
+                ), 'backup/moodle2',
                 'cmid=' . (int)$module['cm']->id);
         } finally {
             if ($restorecontroller) {
@@ -395,19 +411,35 @@ class execution_checks {
             foreach ($tasks as $task) {
                 $classname = (string)($task['classname'] ?? '');
                 if ($classname === '' || !moodle_class_loader::load_symbol($classname)) {
-                    throw new coding_exception(get_string('runtimeexception08', 'local_pluginvalidator', (object)['p1' => $classname]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception08',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname]
+                    ));
                 }
                 if (!is_subclass_of($classname, \core\task\scheduled_task::class)) {
-                    throw new coding_exception(get_string('runtimeexception09', 'local_pluginvalidator', (object)['p1' => $classname]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception09',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname]
+                    ));
                 }
                 $instance = new $classname();
                 $name = $instance->get_name();
                 if (!is_string($name) || $name === '') {
-                    throw new coding_exception(get_string('runtimeexception10', 'local_pluginvalidator', (object)['p1' => $classname]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception10',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname]
+                    ));
                 }
                 $method = new ReflectionMethod($classname, 'execute');
                 if (!$method->isPublic() || $method->getNumberOfRequiredParameters() !== 0) {
-                    throw new coding_exception(get_string('runtimeexception11', 'local_pluginvalidator', (object)['p1' => $classname]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception11',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname]
+                    ));
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
                     get_string('runtimecheck15', 'local_pluginvalidator', (object)['p1' => $classname]),
@@ -599,7 +631,11 @@ class execution_checks {
                 }
 
                 if ($eventname === '') {
-                    throw new coding_exception(get_string('runtimeexception15', 'local_pluginvalidator', (object)['p1' => $position]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception15',
+                        'local_pluginvalidator',
+                        (object)['p1' => $position]
+                    ));
                 }
 
                 if (!$eventclassexists) {
@@ -615,7 +651,11 @@ class execution_checks {
                 }
 
                 if (!$eventisvalid) {
-                    throw new coding_exception(get_string('runtimeexception17', 'local_pluginvalidator', (object)['p1' => $position, 'p2' => $eventname]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception17',
+                        'local_pluginvalidator',
+                        (object)['p1' => $position, 'p2' => $eventname]
+                    ));
                 }
 
                 $this->validate_callable($callback, 1);
@@ -669,7 +709,11 @@ class execution_checks {
                 }
                 $this->validate_callable($callback, 1);
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
-                    get_string('runtimecheck22', 'local_pluginvalidator', (object)['p1' => $hook, 'p2' => $this->callback_name($callback)]),
+                    get_string(
+                        'runtimecheck22',
+                        'local_pluginvalidator',
+                        (object)['p1' => $hook, 'p2' => $this->callback_name($callback)]
+                    ),
                     'db/hooks.php', $this->callback_name($callback));
             }
         } catch (Throwable $e) {
@@ -727,7 +771,11 @@ class execution_checks {
                     throw new coding_exception(get_string('runtimeexception22', 'local_pluginvalidator'));
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    get_string('runtimecheck26', 'local_pluginvalidator', (object)['p1' => $classname]), 'classes/privacy/provider.php', $classname);
+                    get_string(
+                        'runtimecheck26',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname]
+                    ), 'classes/privacy/provider.php', $classname);
                 return;
             }
             if (is_subclass_of($classname, \core_privacy\local\metadata\null_provider::class)) {
@@ -739,7 +787,11 @@ class execution_checks {
             throw new coding_exception(get_string('runtimeexception23', 'local_pluginvalidator'));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                get_string('runtimecheck28', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'classes/privacy/provider.php', $classname);
+                get_string(
+                    'runtimecheck28',
+                    'local_pluginvalidator',
+                    (object)['p1' => $e->getMessage()]
+                ), 'classes/privacy/provider.php', $classname);
         }
     }
 
@@ -833,7 +885,11 @@ class execution_checks {
             );
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                get_string('runtimecheck34', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), is_file($file) ? 'filter.php' : 'classes/text_filter.php');
+                get_string(
+                    'runtimecheck34',
+                    'local_pluginvalidator',
+                    (object)['p1' => $e->getMessage()]
+                ), is_file($file) ? 'filter.php' : 'classes/text_filter.php');
         }
     }
 
@@ -887,7 +943,11 @@ class execution_checks {
             if (function_exists($itemupdate)) {
                 $itemupdate($module['instance']);
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    get_string('runtimecheck37', 'local_pluginvalidator', (object)['p1' => $itemupdate, 'p2' => $module['instance']->id]), 'lib.php', $itemupdate);
+                    get_string(
+                        'runtimecheck37',
+                        'local_pluginvalidator',
+                        (object)['p1' => $itemupdate, 'p2' => $module['instance']->id]
+                    ), 'lib.php', $itemupdate);
             }
             if (function_exists($updategrades)) {
                 $gradeitem = $DB->get_record('grade_items', [
@@ -909,7 +969,11 @@ class execution_checks {
                     }
                     $reflection->invokeArgs($args);
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                        get_string('runtimecheck38', 'local_pluginvalidator', (object)['p1' => $updategrades, 'p2' => $userid]), 'lib.php', $updategrades);
+                        get_string(
+                            'runtimecheck38',
+                            'local_pluginvalidator',
+                            (object)['p1' => $updategrades, 'p2' => $userid]
+                        ), 'lib.php', $updategrades);
                 } else {
                     $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
                         get_string('runtimecheck39', 'local_pluginvalidator', (object)['p1' => $updategrades]),
@@ -966,7 +1030,11 @@ class execution_checks {
         try {
             if ($hasclass) {
                 if (!is_subclass_of($classname, \core_completion\activity_custom_completion::class)) {
-                    throw new coding_exception(get_string('runtimeexception29', 'local_pluginvalidator', (object)['p1' => $classname]));
+                    throw new coding_exception(get_string(
+                        'runtimeexception29',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname]
+                    ));
                 }
                 $rules = $classname::get_defined_custom_rules();
                 if (!is_array($rules)) {
@@ -984,13 +1052,21 @@ class execution_checks {
                 $availablerules = $custom->get_available_custom_rules();
                 foreach ($availablerules as $completionrule) {
                     if (!in_array($completionrule, $rules, true)) {
-                        throw new coding_exception(get_string('runtimeexception32', 'local_pluginvalidator', (object)['p1' => $completionrule]));
+                        throw new coding_exception(get_string(
+                            'runtimeexception32',
+                            'local_pluginvalidator',
+                            (object)['p1' => $completionrule]
+                        ));
                     }
                     $custom->get_state((string)$completionrule);
                 }
 
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                    get_string('runtimecheck43', 'local_pluginvalidator', (object)['p1' => $classname, 'p2' => count($rules), 'p3' => count($availablerules)]),
+                    get_string(
+                        'runtimecheck43',
+                        'local_pluginvalidator',
+                        (object)['p1' => $classname, 'p2' => count($rules), 'p3' => count($availablerules)]
+                    ),
                     'classes/completion/custom_completion.php', $classname);
             }
             if (function_exists($legacy)) {
@@ -1033,7 +1109,11 @@ class execution_checks {
                 get_class($renderer));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
-                get_string('runtimecheck47', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), is_file($file) ? 'renderer.php' : 'classes/output/renderer.php');
+                get_string(
+                    'runtimecheck47',
+                    'local_pluginvalidator',
+                    (object)['p1' => $e->getMessage()]
+                ), is_file($file) ? 'renderer.php' : 'classes/output/renderer.php');
         }
     }
 
@@ -1060,7 +1140,11 @@ class execution_checks {
             $format->get_course();
             $format->get_section(0);
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
-                get_string('runtimecheck49', 'local_pluginvalidator', (object)['p1' => $course->id]), 'lib.php', get_class($format));
+                get_string(
+                    'runtimecheck49',
+                    'local_pluginvalidator',
+                    (object)['p1' => $course->id]
+                ), 'lib.php', get_class($format));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 get_string('runtimecheck50', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'lib.php');
@@ -1348,7 +1432,11 @@ class execution_checks {
         }
 
         if (!is_callable($callback)) {
-            throw new coding_exception(get_string('runtimeexception38', 'local_pluginvalidator', (object)['p1' => $this->callback_name($callback)]));
+            throw new coding_exception(get_string(
+                'runtimeexception38',
+                'local_pluginvalidator',
+                (object)['p1' => $this->callback_name($callback)]
+            ));
         }
         if (is_array($callback)) {
             $reflection = new ReflectionMethod($callback[0], $callback[1]);
@@ -1362,7 +1450,11 @@ class execution_checks {
             throw new coding_exception(get_string('runtimeexception39', 'local_pluginvalidator'));
         }
         if ($reflection->getNumberOfParameters() < $minimumparameters) {
-            throw new coding_exception(get_string('runtimeexception40', 'local_pluginvalidator', (object)['p1' => $minimumparameters]));
+            throw new coding_exception(get_string(
+                'runtimeexception40',
+                'local_pluginvalidator',
+                (object)['p1' => $minimumparameters]
+            ));
         }
     }
 
