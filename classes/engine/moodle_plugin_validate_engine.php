@@ -33,22 +33,38 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
     /** Fixed version of the reviewed source committed to the plugin. */
     private const BUNDLED_VERSION = '1.2.6';
 
-    /** @return string Stable engine ID. */
+    /**
+     * Returns the stable engine ID.
+     *
+     * @return string Engine identifier.
+     */
     public function get_id(): string {
         return 'moodle_plugin_validate';
     }
 
-    /** @return string Localised engine name. */
+    /**
+     * Returns the localised engine name.
+     *
+     * @return string Engine name.
+     */
     public function get_name(): string {
         return get_string('engine_moodlepluginvalidate', 'local_pluginvalidator');
     }
 
-    /** @return string Localised engine description. */
+    /**
+     * Returns the localised engine description.
+     *
+     * @return string Engine description.
+     */
     public function get_description(): string {
         return get_string('engine_moodlepluginvalidate_desc', 'local_pluginvalidator');
     }
 
-    /** @return string Engine result schema. */
+    /**
+     * Returns the result format.
+     *
+     * @return string Structured result format.
+     */
     public function get_result_format(): string {
         return validation_engine_interface::RESULT_STRUCTURED;
     }
@@ -117,12 +133,18 @@ class moodle_plugin_validate_engine implements validation_engine_interface {
         }
     }
 
-    /** @return string Absolute path to the fixed bundled library. */
+    /**
+     * Locates the bundled validator without consulting Moodle data files.
+     *
+     * @return string Absolute path to the library.
+     */
     private function get_engine_root(): string {
         return dirname(__DIR__, 2) . '/vendor/' . self::ENGINE_DIRECTORY;
     }
 
     /**
+     * Checks whether the bundled library contains its required source files.
+     *
      * @param string $directory Library source directory.
      * @return bool Whether required library files are present.
      */
