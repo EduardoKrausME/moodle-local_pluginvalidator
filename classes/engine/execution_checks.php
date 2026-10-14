@@ -127,7 +127,7 @@ class execution_checks {
             try {
                 $reflection = new ReflectionFunction($function);
                 if (!$reflection->isUserDefined()) {
-                    throw new coding_exception('Callback did not resolve to plugin code.');
+                    throw new coding_exception(get_string('runtimeexception01', 'local_pluginvalidator'));
                 }
 
                 if ($mode === 'contract') {
@@ -169,7 +169,7 @@ class execution_checks {
                 if (substr($function, -strlen('_get_file_areas')) === '_get_file_areas') {
                     $areas = $function($module['course'], $module['cm'], $module['context']);
                     if (!is_array($areas)) {
-                        throw new coding_exception('get_file_areas() must return an array.');
+                        throw new coding_exception(get_string('runtimeexception02', 'local_pluginvalidator'));
                     }
                     $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                         get_string('runtimecheck06', 'local_pluginvalidator', (object)['p1' => $function, 'p2' => count($areas)]), 'lib.php', $function);
@@ -223,7 +223,7 @@ class execution_checks {
                 $record['contextid'], $record['component'], $record['filearea'], 0, '/', $filename
             );
             if (!$loaded || $loaded->get_content() !== 'pluginvalidator') {
-                throw new coding_exception('File API round-trip did not return the written content.');
+                throw new coding_exception(get_string('runtimeexception03', 'local_pluginvalidator'));
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                 get_string('runtimecheck09', 'local_pluginvalidator', (object)['p1' => $filearea]), 'lib.php', $filearea);
@@ -297,7 +297,7 @@ class execution_checks {
             $results = $backupcontroller->get_results();
             $backupfile = $results['backup_destination'] ?? null;
             if (!$backupfile) {
-                throw new coding_exception('Backup did not produce a backup_destination file.');
+                throw new coding_exception(get_string('runtimeexception04', 'local_pluginvalidator'));
             }
 
             $backupcontroller->destroy();
@@ -323,12 +323,12 @@ class execution_checks {
             );
 
             if (!$restorecontroller->execute_precheck()) {
-                throw new coding_exception('Restore precheck returned false.');
+                throw new coding_exception(get_string('runtimeexception05', 'local_pluginvalidator'));
             }
             $restorecontroller->execute_plan();
             $newcmid = $this->find_restored_module_id($restorecontroller, (int)$module['context']->id);
             if (!$newcmid) {
-                throw new coding_exception('The restored course module could not be identified.');
+                throw new coding_exception(get_string('runtimeexception06', 'local_pluginvalidator'));
             }
 
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
@@ -390,24 +390,24 @@ class execution_checks {
         try {
             $tasks = $this->load_array_file($file, 'tasks');
             if ($tasks === []) {
-                throw new coding_exception('db/tasks.php does not declare any scheduled task.');
+                throw new coding_exception(get_string('runtimeexception07', 'local_pluginvalidator'));
             }
             foreach ($tasks as $task) {
                 $classname = (string)($task['classname'] ?? '');
                 if ($classname === '' || !moodle_class_loader::load_symbol($classname)) {
-                    throw new coding_exception("Scheduled task class '{$classname}' cannot be loaded.");
+                    throw new coding_exception(get_string('runtimeexception08', 'local_pluginvalidator', (object)['p1' => $classname]));
                 }
                 if (!is_subclass_of($classname, \core\task\scheduled_task::class)) {
-                    throw new coding_exception("{$classname} does not extend core\\task\\scheduled_task.");
+                    throw new coding_exception(get_string('runtimeexception09', 'local_pluginvalidator', (object)['p1' => $classname]));
                 }
                 $instance = new $classname();
                 $name = $instance->get_name();
                 if (!is_string($name) || $name === '') {
-                    throw new coding_exception("{$classname}::get_name() returned an empty value.");
+                    throw new coding_exception(get_string('runtimeexception10', 'local_pluginvalidator', (object)['p1' => $classname]));
                 }
                 $method = new ReflectionMethod($classname, 'execute');
                 if (!$method->isPublic() || $method->getNumberOfRequiredParameters() !== 0) {
-                    throw new coding_exception("{$classname}::execute() must be public and parameterless.");
+                    throw new coding_exception(get_string('runtimeexception11', 'local_pluginvalidator', (object)['p1' => $classname]));
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
                     get_string('runtimecheck15', 'local_pluginvalidator', (object)['p1' => $classname]),
@@ -439,11 +439,11 @@ class execution_checks {
                 $task->set_custom_data(['pluginvalidator' => true]);
                 $data = $task->get_custom_data();
                 if (!is_object($data) || empty($data->pluginvalidator)) {
-                    throw new coding_exception('Custom data serialization round-trip failed.');
+                    throw new coding_exception(get_string('runtimeexception12', 'local_pluginvalidator'));
                 }
                 $method = new ReflectionMethod($classname, 'execute');
                 if (!$method->isPublic() || $method->getNumberOfRequiredParameters() !== 0) {
-                    throw new coding_exception('execute() must be public and parameterless.');
+                    throw new coding_exception(get_string('runtimeexception13', 'local_pluginvalidator'));
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
                     get_string('runtimecheck17', 'local_pluginvalidator', (object)['p1' => $classname]),
@@ -475,11 +475,11 @@ class execution_checks {
         $currenttarget = '';
         $currentdetails = [
             [
-                'label' => 'Plugin being validated',
+                'label' => get_string('runtimeeventdiag01', 'local_pluginvalidator'),
                 'value' => (string)$plugin['component'],
             ],
             [
-                'label' => 'Observer declaration',
+                'label' => get_string('runtimeeventdiag02', 'local_pluginvalidator'),
                 'value' => 'db/events.php',
             ],
         ];
@@ -487,7 +487,7 @@ class execution_checks {
         try {
             $observers = $this->load_array_file($file, 'observers');
             if ($observers === []) {
-                throw new coding_exception('db/events.php does not declare observers.');
+                throw new coding_exception(get_string('runtimeexception14', 'local_pluginvalidator'));
             }
 
             $position = 0;
@@ -522,66 +522,66 @@ class execution_checks {
 
                 $currentdetails = [
                     [
-                        'label' => 'Plugin being validated',
+                        'label' => get_string('runtimeeventdiag01', 'local_pluginvalidator'),
                         'value' => (string)$plugin['component'],
                     ],
                     [
-                        'label' => 'Observer declaration',
+                        'label' => get_string('runtimeeventdiag02', 'local_pluginvalidator'),
                         'value' => 'db/events.php',
                     ],
                     [
-                        'label' => 'Observer',
+                        'label' => get_string('runtimeeventdiag03', 'local_pluginvalidator'),
                         'value' => '#' . $position,
                     ],
                     [
-                        'label' => 'Observed event',
-                        'value' => $eventname !== '' ? $eventname : '(empty)',
+                        'label' => get_string('runtimeeventdiag04', 'local_pluginvalidator'),
+                        'value' => $eventname !== '' ? $eventname : get_string('runtimestate07', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Event component',
-                        'value' => $eventcomponent !== '' ? $eventcomponent : '(unknown)',
+                        'label' => get_string('runtimeeventdiag05', 'local_pluginvalidator'),
+                        'value' => $eventcomponent !== '' ? $eventcomponent : get_string('runtimestate06', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Callback',
+                        'label' => get_string('runtimeeventdiag06', 'local_pluginvalidator'),
                         'value' => $this->callback_name($callback),
                     ],
                     [
-                        'label' => 'Cross-component observer',
-                        'value' => $isexternal ? 'Yes' : 'No',
+                        'label' => get_string('runtimeeventdiag07', 'local_pluginvalidator'),
+                        'value' => $isexternal ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Event component installed',
+                        'label' => get_string('runtimeeventdiag08', 'local_pluginvalidator'),
                         'value' => $eventcomponent === ''
-                            ? 'Unknown'
-                            : ($componentdir !== '' ? 'Yes' : 'No'),
+                            ? get_string('runtimestate03', 'local_pluginvalidator')
+                            : ($componentdir !== '' ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')),
                     ],
                     [
-                        'label' => 'Event component directory',
-                        'value' => $componentdir !== '' ? $componentdir : '(not resolved)',
+                        'label' => get_string('runtimeeventdiag09', 'local_pluginvalidator'),
+                        'value' => $componentdir !== '' ? $componentdir : get_string('runtimestate08', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Moodle autoloader resolved event',
-                        'value' => $eventautoloaded ? 'Yes' : 'No',
+                        'label' => get_string('runtimeeventdiag10', 'local_pluginvalidator'),
+                        'value' => $eventautoloaded ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Expected event class file',
-                        'value' => $eventclassfile !== '' ? $eventclassfile : '(not resolved)',
+                        'label' => get_string('runtimeeventdiag11', 'local_pluginvalidator'),
+                        'value' => $eventclassfile !== '' ? $eventclassfile : get_string('runtimestate08', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Expected event class file exists',
-                        'value' => $eventclassfile !== '' ? ($eventclassfileexists ? 'Yes' : 'No') : 'Not checked',
+                        'label' => get_string('runtimeeventdiag12', 'local_pluginvalidator'),
+                        'value' => $eventclassfile !== '' ? ($eventclassfileexists ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')) : get_string('runtimestate04', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Direct fallback loaded event',
-                        'value' => $eventclassfileexists ? ($eventfallbackloaded ? 'Yes' : 'No') : 'Not attempted',
+                        'label' => get_string('runtimeeventdiag13', 'local_pluginvalidator'),
+                        'value' => $eventclassfileexists ? ($eventfallbackloaded ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')) : get_string('runtimestate05', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Event class exists',
-                        'value' => $eventclassexists ? 'Yes' : 'No',
+                        'label' => get_string('runtimeeventdiag14', 'local_pluginvalidator'),
+                        'value' => $eventclassexists ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator'),
                     ],
                     [
-                        'label' => 'Extends core\\event\\base',
-                        'value' => !$eventclassexists ? 'Not checked' : ($eventisvalid ? 'Yes' : 'No'),
+                        'label' => get_string('runtimeeventdiag15', 'local_pluginvalidator'),
+                        'value' => !$eventclassexists ? get_string('runtimestate04', 'local_pluginvalidator') : ($eventisvalid ? get_string('runtimestate01', 'local_pluginvalidator') : get_string('runtimestate02', 'local_pluginvalidator')),
                     ],
                 ];
 
@@ -590,24 +590,23 @@ class execution_checks {
                 }
 
                 if ($eventname === '') {
-                    throw new coding_exception(
-                        "Observer #{$position} in db/events.php does not declare a valid eventname."
-                    );
+                    throw new coding_exception(get_string('runtimeexception15', 'local_pluginvalidator', (object)['p1' => $position]));
                 }
 
                 if (!$eventclassexists) {
-                    $message = "While validating {$plugin['component']}, observer #{$position} in db/events.php "
-                        . "references event '{$eventname}', but the event class cannot be loaded.";
+                    $message = get_string('runtimeeventmissing', 'local_pluginvalidator', (object)[
+                        'component' => $plugin['component'],
+                        'position' => $position,
+                        'event' => $eventname,
+                    ]);
                     if ($isexternal) {
-                        $message .= " The event belongs to external component '{$eventcomponent}'.";
+                        $message .= get_string('runtimeeventexternal', 'local_pluginvalidator', $eventcomponent);
                     }
                     throw new coding_exception($message);
                 }
 
                 if (!$eventisvalid) {
-                    throw new coding_exception(
-                        "Observer #{$position} event '{$eventname}' exists but does not extend core\\event\\base."
-                    );
+                    throw new coding_exception(get_string('runtimeexception17', 'local_pluginvalidator', (object)['p1' => $position, 'p2' => $eventname]));
                 }
 
                 $this->validate_callable($callback, 1);
@@ -651,13 +650,13 @@ class execution_checks {
         try {
             $callbacks = $this->load_array_file($file, 'callbacks');
             if ($callbacks === []) {
-                throw new coding_exception('db/hooks.php does not declare callbacks.');
+                throw new coding_exception(get_string('runtimeexception18', 'local_pluginvalidator'));
             }
             foreach ($callbacks as $definition) {
                 $hook = ltrim((string)($definition['hook'] ?? ''), '\\');
                 $callback = $definition['callback'] ?? null;
                 if ($hook === '' || !moodle_class_loader::load_symbol($hook)) {
-                    throw new coding_exception("Hook '{$hook}' cannot be loaded on this Moodle version.");
+                    throw new coding_exception(get_string('runtimeexception19', 'local_pluginvalidator', (object)['p1' => $hook]));
                 }
                 $this->validate_callable($callback, 1);
                 $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
@@ -686,7 +685,7 @@ class execution_checks {
             require_once($CFG->libdir . '/adminlib.php');
             $adminroot = admin_get_root(true, true);
             if (!$adminroot instanceof \admin_root) {
-                throw new coding_exception('admin_get_root() did not return an administration tree.');
+                throw new coding_exception(get_string('runtimeexception20', 'local_pluginvalidator'));
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                 get_string('runtimecheck24', 'local_pluginvalidator'), 'settings.php');
@@ -710,13 +709,13 @@ class execution_checks {
         $classname = (string)$plugin['component'] . '\\privacy\\provider';
         try {
             if (!moodle_class_loader::load_symbol($classname)) {
-                throw new coding_exception("Privacy provider {$classname} cannot be loaded.");
+                throw new coding_exception(get_string('runtimeexception21', 'local_pluginvalidator', (object)['p1' => $classname]));
             }
             if (is_subclass_of($classname, \core_privacy\local\metadata\provider::class)) {
                 $collection = new \core_privacy\local\metadata\collection((string)$plugin['component']);
                 $result = $classname::get_metadata($collection);
                 if (!$result instanceof \core_privacy\local\metadata\collection) {
-                    throw new coding_exception('get_metadata() did not return a metadata collection.');
+                    throw new coding_exception(get_string('runtimeexception22', 'local_pluginvalidator'));
                 }
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                     get_string('runtimecheck26', 'local_pluginvalidator', (object)['p1' => $classname]), 'classes/privacy/provider.php', $classname);
@@ -728,7 +727,7 @@ class execution_checks {
                     'classes/privacy/provider.php', $classname);
                 return;
             }
-            throw new coding_exception('Provider implements neither metadata provider nor null_provider.');
+            throw new coding_exception(get_string('runtimeexception23', 'local_pluginvalidator'));
         } catch (Throwable $e) {
             $this->add_check($groups, $rule, 'error', self::STATE_EXECUTED,
                 get_string('runtimecheck28', 'local_pluginvalidator', (object)['p1' => $e->getMessage()]), 'classes/privacy/provider.php', $classname);
@@ -753,12 +752,12 @@ class execution_checks {
             require_once($file);
             $classname = 'block_' . $name;
             if (!class_exists($classname) || !is_subclass_of($classname, 'block_base')) {
-                throw new coding_exception("{$classname} does not extend block_base.");
+                throw new coding_exception(get_string('runtimeexception24', 'local_pluginvalidator', (object)['p1' => $classname]));
             }
             $block = new $classname();
             $formats = $block->applicable_formats();
             if (!is_array($formats)) {
-                throw new coding_exception('applicable_formats() must return an array.');
+                throw new coding_exception(get_string('runtimeexception25', 'local_pluginvalidator'));
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                 get_string('runtimecheck29', 'local_pluginvalidator', (object)['p1' => $classname]), basename($file), $classname);
@@ -767,7 +766,7 @@ class execution_checks {
             if ($instance) {
                 $liveblock = block_instance($name, $instance, $PAGE);
                 if (!$liveblock) {
-                    throw new coding_exception('block_instance() failed to create the installed block instance.');
+                    throw new coding_exception(get_string('runtimeexception26', 'local_pluginvalidator'));
                 }
                 $liveblock->get_content();
                 $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
@@ -811,12 +810,12 @@ class execution_checks {
                 }
             }
             if ($classname === '') {
-                throw new coding_exception('Filter class cannot be loaded.');
+                throw new coding_exception(get_string('runtimeexception27', 'local_pluginvalidator'));
             }
             $filter = new $classname(\context_system::instance(), []);
             $result = $filter->filter('<p>Plugin validator filter smoke test.</p>', []);
             if (!is_string($result)) {
-                throw new coding_exception('filter() must return a string.');
+                throw new coding_exception(get_string('runtimeexception28', 'local_pluginvalidator'));
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                 get_string('runtimecheck33', 'local_pluginvalidator', (object)['p1' => $classname]),
@@ -958,17 +957,17 @@ class execution_checks {
         try {
             if ($hasclass) {
                 if (!is_subclass_of($classname, \core_completion\activity_custom_completion::class)) {
-                    throw new coding_exception("{$classname} does not extend core_completion\\activity_custom_completion.");
+                    throw new coding_exception(get_string('runtimeexception29', 'local_pluginvalidator', (object)['p1' => $classname]));
                 }
                 $rules = $classname::get_defined_custom_rules();
                 if (!is_array($rules)) {
-                    throw new coding_exception('get_defined_custom_rules() must return an array.');
+                    throw new coding_exception(get_string('runtimeexception30', 'local_pluginvalidator'));
                 }
                 $custom = new $classname($module['cminfo'], (int)$USER->id);
                 $descriptions = $custom->get_custom_rule_descriptions();
                 $sortorder = $custom->get_sort_order();
                 if (!is_array($descriptions) || !is_array($sortorder)) {
-                    throw new coding_exception('Completion descriptions and sort order must be arrays.');
+                    throw new coding_exception(get_string('runtimeexception31', 'local_pluginvalidator'));
                 }
 
                 // Call get_state() only for rules enabled in this activity instance.
@@ -976,7 +975,7 @@ class execution_checks {
                 $availablerules = $custom->get_available_custom_rules();
                 foreach ($availablerules as $completionrule) {
                     if (!in_array($completionrule, $rules, true)) {
-                        throw new coding_exception("Available completion rule '{$completionrule}' is not defined by the plugin.");
+                        throw new coding_exception(get_string('runtimeexception32', 'local_pluginvalidator', (object)['p1' => $completionrule]));
                     }
                     $custom->get_state((string)$completionrule);
                 }
@@ -1017,7 +1016,7 @@ class execution_checks {
             }
             $renderer = $PAGE->get_renderer((string)$plugin['component']);
             if (!$renderer) {
-                throw new coding_exception('Moodle renderer factory returned no renderer.');
+                throw new coding_exception(get_string('runtimeexception33', 'local_pluginvalidator'));
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
                 get_string('runtimecheck46', 'local_pluginvalidator'),
@@ -1074,7 +1073,7 @@ class execution_checks {
         try {
             require_once($file);
             if (!class_exists($classname) || !is_subclass_of($classname, 'auth_plugin_base')) {
-                throw new coding_exception("{$classname} does not extend auth_plugin_base.");
+                throw new coding_exception(get_string('runtimeexception34', 'local_pluginvalidator', (object)['p1' => $classname]));
             }
             $auth = new $classname();
             $auth->is_internal();
@@ -1102,7 +1101,7 @@ class execution_checks {
             require_once($CFG->libdir . '/enrollib.php');
             $instance = enrol_get_plugin((string)$plugin['name']);
             if (!$instance) {
-                throw new coding_exception('enrol_get_plugin() returned false.');
+                throw new coding_exception(get_string('runtimeexception35', 'local_pluginvalidator'));
             }
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
                 get_string('runtimecheck53', 'local_pluginvalidator'),
@@ -1130,7 +1129,7 @@ class execution_checks {
             require_once($CFG->dirroot . '/repository/lib.php');
             require_once($file);
             if (!class_exists($classname) || !is_subclass_of($classname, 'repository')) {
-                throw new coding_exception("{$classname} does not extend repository.");
+                throw new coding_exception(get_string('runtimeexception36', 'local_pluginvalidator', (object)['p1' => $classname]));
             }
             $reflection = new \ReflectionClass($classname);
             $this->add_check($groups, $rule, 'ok', self::STATE_CONTRACT,
@@ -1157,7 +1156,7 @@ class execution_checks {
             require_once($CFG->dirroot . '/question/engine/bank.php');
             $qtype = \question_bank::get_qtype((string)$plugin['name'], false);
             if (!$qtype) {
-                throw new coding_exception('question_bank::get_qtype() returned no question type.');
+                throw new coding_exception(get_string('runtimeexception37', 'local_pluginvalidator'));
             }
             $qtype->menu_name();
             $this->add_check($groups, $rule, 'ok', self::STATE_EXECUTED,
@@ -1340,7 +1339,7 @@ class execution_checks {
         }
 
         if (!is_callable($callback)) {
-            throw new coding_exception("Callback '{$this->callback_name($callback)}' is not callable.");
+            throw new coding_exception(get_string('runtimeexception38', 'local_pluginvalidator', (object)['p1' => $this->callback_name($callback)]));
         }
         if (is_array($callback)) {
             $reflection = new ReflectionMethod($callback[0], $callback[1]);
@@ -1351,10 +1350,10 @@ class execution_checks {
             $reflection = new ReflectionFunction($callback);
         }
         if ($reflection instanceof ReflectionMethod && !$reflection->isPublic()) {
-            throw new coding_exception('Callback method must be public.');
+            throw new coding_exception(get_string('runtimeexception39', 'local_pluginvalidator'));
         }
         if ($reflection->getNumberOfParameters() < $minimumparameters) {
-            throw new coding_exception("Callback must accept at least {$minimumparameters} parameter(s).");
+            throw new coding_exception(get_string('runtimeexception40', 'local_pluginvalidator', (object)['p1' => $minimumparameters]));
         }
     }
 
