@@ -19,7 +19,6 @@ namespace local_pluginvalidator;
 use core\plugininfo\base;
 use core_component;
 use core_plugin_manager;
-use core_text;
 
 /**
  * Finds installed third-party plugins.
