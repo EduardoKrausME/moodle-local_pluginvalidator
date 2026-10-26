@@ -58,11 +58,6 @@ removed because the library now ships with the plugin. Previously downloaded cop
 
 The Runtime execution engine is part of this plugin and requires no separate installation.
 
-### Downloadable ZIP
-
-Tagged GitHub releases attach `local_pluginvalidator.zip` with a single top-level
-`pluginvalidator/` directory that the Moodle plugin installer accepts. Do not use GitHub's
-automatic source ZIP, whose generated root folder is incompatible with Moodle.
 
 ## Requirements
 
