@@ -8,16 +8,16 @@ The plugin exposes independent validation engines through a common interface.
 
 Currently registered engines:
 
-- **Moodle Plugin Validate** — EduardoKrausME/moodle-plugin-validate. Loaded as a PHP library and returns structured
+- **Moodle Plugin Validate** - EduardoKrausME/moodle-plugin-validate. Loaded as a PHP library and returns structured
   results grouped by rule and individual check.
-- **Runtime execution** — a built-in validator that exercises installed plugin code inside Moodle instead of only
+- **Runtime execution** - a built-in validator that exercises installed plugin code inside Moodle instead of only
   inspecting source files.
 
 The runtime engine now separates every result into three execution levels:
 
-- **Executed** — the callback or Moodle API was actually invoked.
-- **Contract validated** — class, callback, inheritance and signature were validated, but execution was intentionally skipped because it could write data, call external systems or trigger large side effects.
-- **Not applicable** — the check does not apply or no realistic installed context exists.
+- **Executed** - the callback or Moodle API was actually invoked.
+- **Contract validated** - class, callback, inheritance and signature were validated, but execution was intentionally skipped because it could write data, call external systems or trigger large side effects.
+- **Not applicable** - the check does not apply or no realistic installed context exists.
 
 Runtime coverage includes:
 
